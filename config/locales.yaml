@@ -1,0 +1,17 @@
+en:
+  welcome: "Hello! I'm a bot for creating polls and notes. Use /poll for polls and /note to create notes."
+  note_created: "Note successfully created: %s"
+  no_notes: "You don't have any notes yet."
+  notes_list: "Your notes:\n"
+  unknown_command: "Unknown command. Available commands:\n/start - Greeting\n/poll - Create poll\n/note - Create note\n/notes - View notes"
+  note_creation_error: "An error occurred while creating the note."
+  note_retrieval_error: "An error occurred while retrieving your notes."
+
+ru:
+  welcome: "Привет! Я бот для создания опросов и заметок. Используй /poll для опросов и /note для создания заметок."
+  note_created: "Заметка успешно создана: %s"
+  no_notes: "У вас пока нет заметок."
+  notes_list: "Ваши заметки:\n"
+  unknown_command: "Неизвестная команда. Доступные команды:\n/start - Приветствие\n/poll - Создать опрос\n/note - Создать заметку\n/notes - Посмотреть заметки"
+  note_creation_error: "Произошла ошибка при создании заметки."
+  note_retrieval_error: "Произошла ошибка при получении ваших заметок."
