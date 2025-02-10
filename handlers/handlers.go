@@ -5,7 +5,7 @@ import (
     "strings"
 
     "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-    "github.com/net22sky/telegram-bot/app/mongo"
+    "github.com/net22sky/telegram-bot/mongo"
 )
 
 // Locales содержит строки для разных языков

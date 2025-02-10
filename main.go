@@ -4,9 +4,10 @@ import (
     "log"
     "os"
 
-    "github.com/net22sky/telegram-bot/app/config"
-    "github.com/net22sky/telegram-bot/app/bot"
-    "github.com/net22sky/telegram-bot/app/mongo"
+    "github.com/net22sky/telegram-bot/config"
+    "github.com/net22sky/telegram-bot/bot"
+    "github.com/net22sky/telegram-bot/mongo"
+    "github.com/net22sky/telegram-bot/handlers"
 )
 
 func main() {

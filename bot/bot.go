@@ -6,7 +6,7 @@ import (
     "time"
 
     tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-    "github.com/net22sky/telegram-bot/app/handlers"
+    "github.com/net22sky/telegram-bot/handlers"
 )
 
 // NewBot создает и возвращает новый экземпляр бота
