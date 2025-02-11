@@ -3,20 +3,29 @@ package main
 import (
     "log"
     "os"
-
+    "fmt"
     "github.com/net22sky/telegram-bot/config"
     "github.com/net22sky/telegram-bot/bot"
-    "github.com/net22sky/telegram-bot/mongo"
-    "github.com/net22sky/telegram-bot/handlers"
+    "github.com/yourusername/telegram-bot/mysql"
+    "github.com/joho/godotenv"
 )
 
 func main() {
+
+    err := godotenv.Load()
+    if err != nil {
+        log.Fatal("Ошибка загрузки .env файла")
+    }
+
     // Загружаем конфигурацию
     cfg, err := config.LoadConfig("config/config.yaml")
     if err != nil {
         log.Fatalf("Ошибка загрузки конфигурации: %v", err)
     }
 
+    
+
+    fmt.Println("config : ", cfg)
     // Загружаем строки локализации
     locales, err := config.LoadLocales("config/locales.yaml")
     if err != nil {
@@ -26,18 +35,17 @@ func main() {
     // Установите язык по умолчанию (например, ru)
     lang := "ru"
 
-    // Получаем URI MongoDB из переменной окружения
-    mongoURI := os.Getenv("MONGO_URI")
-    if mongoURI == "" {
-        log.Fatal("MONGO_URI не установлен")
-    }
-
-    // Инициализация MongoDB
-    err = mongo.InitMongoDB(mongoURI, "telegram_bot", "notes")
-    if err != nil {
-        log.Fatalf("Ошибка подключения к MongoDB: %v", err)
-    }
-
+     // Получаем DSN MySQL из переменной окружения
+     mysqlDSN := os.Getenv("MYSQL_DSN")
+     if mysqlDSN == "" {
+         log.Fatal("MYSQL_DSN не установлен")
+     }
+ 
+     // Инициализация MySQL
+     err = mysql.InitMySQL(mysqlDSN)
+     if err != nil {
+         log.Fatalf("Ошибка подключения к MySQL: %v", err)
+     }
     // Создаем и настраиваем бота
     tgBot, err := bot.NewBot(os.Getenv("TELEGRAM_BOT_TOKEN"), cfg.Telegram.Debug)
     if err != nil {

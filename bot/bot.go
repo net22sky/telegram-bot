@@ -1,10 +1,8 @@
 package bot
 
 import (
-    "context"
     "log"
-    "time"
-
+  
     tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
     "github.com/net22sky/telegram-bot/handlers"
 )

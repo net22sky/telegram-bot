@@ -5,7 +5,7 @@ import (
     "strings"
 
     "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-    "github.com/net22sky/telegram-bot/mongo"
+    "github.com/yourusername/telegram-bot/mysql"
 )
 
 // Locales содержит строки для разных языков
@@ -34,12 +34,6 @@ func HandleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, locales Loca
     }
 }
 
-// HandlePollAnswer обрабатывает ответы на опросы
-func HandlePollAnswer(bot *tgbotapi.BotAPI, pollAnswer *tgbotapi.PollAnswer) {
-    log.Printf("Пользователь %d ответил на опрос %s с вариантами %v",
-        pollAnswer.User.ID, pollAnswer.PollID, pollAnswer.OptionIDs)
-}
-
 // CreateNote создает новую заметку для пользователя
 func CreateNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]string) {
     parts := strings.SplitN(message.Text, " ", 2)
@@ -51,7 +45,7 @@ func CreateNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
     noteText := parts[1]
     userID := message.From.ID
 
-    err := mongo.CreateNote(userID, noteText)
+    err := mysql.CreateNote(userID, noteText)
     if err != nil {
         log.Printf("Ошибка при создании заметки: %v", err)
         SendMessage(bot, message.Chat.ID, l["note_creation_error"])
@@ -64,7 +58,7 @@ func CreateNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 // ViewNotes показывает все заметки пользователя
 func ViewNotes(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]string) {
     userID := message.From.ID
-    notes, err := mongo.GetNotes(userID)
+    notes, err := mysql.GetNotes(userID)
     if err != nil {
         log.Printf("Ошибка при получении заметок: %v", err)
         SendMessage(bot, message.Chat.ID, l["note_retrieval_error"])
@@ -78,25 +72,8 @@ func ViewNotes(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]str
 
     var response string
     for i, note := range notes {
-        response += fmt.Sprintf("%d. %s (ID: %s)\n", i+1, note.Text, note.ID.Hex())
+        response += fmt.Sprintf("%d. %s (ID: %d)\n", i+1, note.Text, note.ID)
     }
 
     SendMessage(bot, message.Chat.ID, l["notes_list"]+response)
-}
-
-// SendMessage отправляет сообщение
-func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
-    msg := tgbotapi.NewMessage(chatID, text)
-    if _, err := bot.Send(msg); err != nil {
-        log.Printf("Ошибка при отправке сообщения: %v", err)
-    }
-}
-
-// SendPoll отправляет опрос
-func SendPoll(bot *tgbotapi.BotAPI, chatID int64) {
-    poll := tgbotapi.NewPoll(chatID, "Какой ваш любимый язык программирования?", "Go", "Python", "JavaScript", "Java")
-    poll.IsAnonymous = false // Опрос не анонимный
-    if _, err := bot.Send(poll); err != nil {
-        log.Printf("Ошибка при отправке опроса: %v", err)
-    }
 }
