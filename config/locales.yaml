@@ -1,5 +1,5 @@
 en:
-  welcome: "Hello! I'm a bot for creating polls and notes. Use /poll for polls and /note to create notes."
+  welcome: "Hello, %s! I'm a bot for creating polls and notes. Use /poll for polls and /note to create notes."
   note_created: "Note successfully created: %s"
   no_notes: "You don't have any notes yet."
   notes_list: "Your notes:\n"
@@ -8,7 +8,7 @@ en:
   note_retrieval_error: "An error occurred while retrieving your notes."
 
 ru:
-  welcome: "Привет! Я бот для создания опросов и заметок. Используй /poll для опросов и /note для создания заметок."
+  welcome: "Привет, %s! Я бот для создания опросов и заметок. Используй /poll для опросов и /note для создания заметок."
   note_created: "Заметка успешно создана: %s"
   no_notes: "У вас пока нет заметок."
   notes_list: "Ваши заметки:\n"

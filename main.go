@@ -6,7 +6,7 @@ import (
     "fmt"
     "github.com/net22sky/telegram-bot/config"
     "github.com/net22sky/telegram-bot/bot"
-    "github.com/yourusername/telegram-bot/mysql"
+    "github.com/net22sky/telegram-bot/mysql"
     "github.com/joho/godotenv"
 )
 
