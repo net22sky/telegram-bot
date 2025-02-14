@@ -14,6 +14,12 @@ import (
 // Locales содержит строки для разных языков, используемые для локализации сообщений бота.
 type Locales map[string]map[string]string
 
+var userStates = make(map[int64]string) // Хранилище состояний пользователей
+const (
+    StateIdle         = "idle"          // Пользователь находится в режиме ожидания
+    StateAddingNote   = "adding_note"   // Пользователь добавляет заметку
+)
+
 // HandleMessage обрабатывает входящие текстовые сообщения от пользователей.
 // Параметры:
 // - bot: Экземпляр Telegram-бота.
@@ -41,6 +47,16 @@ func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales
 			CreateNote(bot, message, l)
 			return
 		}
+
+        // Проверяем текущее состояние пользователя
+        state, exists := userStates[message.From.ID]
+        if exists && state == StateAddingNote {
+            // Если пользователь добавляет заметку, сохраняем её
+            AddNote(bot, message, l)
+            delete(userStates, message.From.ID) // Очищаем состояние
+            return
+        }
+
 
 		// Обработка других команд
 		switch message.Command() {
@@ -203,4 +219,21 @@ func SendStartMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("Ошибка при отправке сообщения: %v", err)
 	}
+}
+
+// AddNote добавляет заметку для пользователя.
+func AddNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]string) {
+    userID := message.From.ID
+    noteText := message.Text
+
+    // Создаем заметку
+    err := mysql.CreateNote(userID, noteText)
+    if err != nil {
+        log.Printf("Ошибка при создании заметки: %v", err)
+        utils.SendMessage(bot, message.Chat.ID, l["note_creation_error"])
+        return
+    }
+
+    // Уведомляем пользователя об успешном создании заметки
+    utils.SendMessage(bot, message.Chat.ID, fmt.Sprintf(l["note_created"], noteText))
 }

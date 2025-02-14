@@ -11,6 +11,9 @@ en:
   note_deleted: "Note with ID %d successfully deleted."
   action_canceled: "Action canceled."
   unknown_action: "Unknown action. Please use the buttons provided."
+  add_note_prompt: "Please send your note in the format: /note <text>"
+  delete_note_prompt: "Select a note to delete:"
+  enter_note_text: "Please enter the note text:"
 
 ru:
   welcome: "Привет! Я бот для создания опросов и заметок. Используй /poll для опросов и /note для создания заметок."
@@ -25,3 +28,6 @@ ru:
   note_deleted: "Заметка с ID %d успешно удалена."
   action_canceled: "Действие отменено."
   unknown_action: "Неизвестное действие. Пожалуйста, используйте предоставленные кнопки."
+  add_note_prompt: "Пожалуйста, отправьте заметку в формате: /note <текст>"
+  delete_note_prompt: "Выберите заметку для удаления:"
+   enter_note_text: "Пожалуйста, введите текст заметки:"
