@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/net22sky/telegram-bot/keyboard"
 	"github.com/net22sky/telegram-bot/mysql"
 	"github.com/net22sky/telegram-bot/utils"
 	"log"
@@ -46,7 +47,7 @@ func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales
 		case "notes":
 			ViewNotes(bot, message, l) // Показать список заметок пользователя
 		case "start":
-			utils.SendMessage(bot, message.Chat.ID, l["welcome"]) // Отправить приветственное сообщение
+			SendStartMessage(bot, message.Chat.ID , l["welcome"]) // Отправить приветственное сообщение
 		case "poll":
 			utils.SendPoll(bot, message.Chat.ID) // Создать опрос
 		case "dellnote":
@@ -187,5 +188,19 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		default:
 			utils.SendMessage(bot, int64(chatID), l["unknown_action"])
 		}
+	}
+}
+
+// SendStartMessage отправляет приветственное сообщение с Inline Keyboard.
+func SendStartMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
+	// Создаем Inline Keyboard через пакет keyboard
+	keyboard := keyboard.StartKeyboard()
+
+	// Отправляем приветственное сообщение с клавиатурой
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyMarkup = keyboard
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Ошибка при отправке сообщения: %v", err)
 	}
 }
