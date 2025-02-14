@@ -67,7 +67,6 @@ func SavePollAnswer(userID int64, pollID string, optionIDs []int) error {
 		userID, pollID, jsonOptionIDs) // Используем db.Exec
 }
 
-
 // GetNoteByID получает заметку по её ID.
 // Параметры:
 //   - noteID: ID заметки.

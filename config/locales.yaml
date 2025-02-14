@@ -9,6 +9,8 @@ en:
   invalid_note_id: "Invalid note ID. Please provide a valid numeric ID."
   note_not_found: "Note not found or you don't have permission to delete it."
   note_deleted: "Note with ID %d successfully deleted."
+  action_canceled: "Action canceled."
+  unknown_action: "Unknown action. Please use the buttons provided."
 
 ru:
   welcome: "Привет! Я бот для создания опросов и заметок. Используй /poll для опросов и /note для создания заметок."
@@ -21,3 +23,5 @@ ru:
   invalid_note_id: "Неверный ID заметки. Пожалуйста, укажите корректный числовое значение."
   note_not_found: "Заметка не найдена или у вас нет прав на её удаление."
   note_deleted: "Заметка с ID %d успешно удалена."
+  action_canceled: "Действие отменено."
+  unknown_action: "Неизвестное действие. Пожалуйста, используйте предоставленные кнопки."

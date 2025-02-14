@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"fmt"
-	"log"
-	"strings"
-
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/net22sky/telegram-bot/mysql"
 	"github.com/net22sky/telegram-bot/utils"
+	"log"
+	"strconv"
+	"strings"
 )
 
 // Locales содержит строки для разных языков, используемые для локализации сообщений бота.
@@ -19,30 +19,43 @@ type Locales map[string]map[string]string
 // - message: Входящее сообщение от пользователя.
 // - locales: Локализованные строки для разных языков.
 // - lang: Язык пользователя.
-func HandleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, locales Locales, lang string) {
-	log.Printf("[%s] %s", message.From.UserName, message.Text)
+// func HandleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, locales Locales, lang string) {
+func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales, lang string) {
+
+	//log.Printf("[%s] %s", message.From.UserName, message.Text)
 
 	l := locales[lang] // Выбираем строки для текущего языка
 
-	// Обработка команды /note для создания заметки
-	if strings.HasPrefix(message.Text, "/note ") {
-		CreateNote(bot, message, l)
+	// Проверяем, является ли обновление CallbackQuery
+	if update.CallbackQuery != nil {
+		handleCallbackQuery(bot, update.CallbackQuery, l)
 		return
 	}
 
-	// Обработка других команд
-	switch message.Command() {
-	case "notes":
-		ViewNotes(bot, message, l) // Показать список заметок пользователя
-	case "start":
-		utils.SendMessage(bot, message.Chat.ID, l["welcome"]) // Отправить приветственное сообщение
-	case "poll":
-		utils.SendPoll(bot, message.Chat.ID) // Создать опрос
-	case "dellnote":
-		utils.DeleteNote(bot, message, l) // Создать опрос
-	default:
-		utils.SendMessage(bot, message.Chat.ID, l["unknown_command"]) // Сообщение о неизвестной команде
+	// Если это обычное сообщение
+	if update.Message != nil {
+		message := update.Message
+		// Обработка команды /note для создания заметки
+		if strings.HasPrefix(message.Text, "/note ") {
+			CreateNote(bot, message, l)
+			return
+		}
+
+		// Обработка других команд
+		switch message.Command() {
+		case "notes":
+			ViewNotes(bot, message, l) // Показать список заметок пользователя
+		case "start":
+			utils.SendMessage(bot, message.Chat.ID, l["welcome"]) // Отправить приветственное сообщение
+		case "poll":
+			utils.SendPoll(bot, message.Chat.ID) // Создать опрос
+		case "dellnote":
+			utils.DeleteNote(bot, message, l) // Создать опрос
+		default:
+			utils.SendMessage(bot, message.Chat.ID, l["unknown_command"]) // Сообщение о неизвестной команде
+		}
 	}
+
 }
 
 // CreateNote создает новую заметку для пользователя.
@@ -117,4 +130,62 @@ func HandlePollAnswer(bot *tgbotapi.BotAPI, pollAnswer *tgbotapi.PollAnswer) {
 	}
 
 	log.Println("Ответ на опрос успешно сохранен")
+}
+
+// handleCallbackQuery обрабатывает нажатия на Inline Keyboard.
+func handleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, l map[string]string) {
+	chatID := callbackQuery.Message.Chat.ID
+	userID := callbackQuery.From.ID
+
+	// Обрабатываем действие по нажатию кнопки
+	switch {
+	case strings.HasPrefix(callbackQuery.Data, "delete_"):
+		// Извлекаем ID заметки из данных кнопки
+		noteIDStr := strings.TrimPrefix(callbackQuery.Data, "delete_")
+		noteID, err := strconv.Atoi(noteIDStr)
+		if err != nil || noteID <= 0 {
+			log.Printf("Ошибка при парсинге ID заметки: %v", err)
+			utils.SendMessage(bot, int64(chatID), l["invalid_note_id"])
+			return
+		}
+
+		// Получаем заметку для проверки владельца
+		note, err := mysql.GetNoteByID(int64(noteID))
+		if err != nil {
+			log.Printf("Ошибка при получении заметки: %v", err)
+			utils.SendMessage(bot, int64(chatID), l["note_retrieval_error"])
+			return
+		}
+
+		if note == nil || note.UserID != userID {
+			utils.SendMessage(bot, int64(chatID), l["note_not_found"])
+			return
+		}
+
+		// Удаляем заметку
+		err = mysql.DeleteNoteByID(noteID)
+		if err != nil {
+			log.Printf("Ошибка при удалении заметки: %v", err)
+			utils.SendMessage(bot, int64(chatID), l["note_deletion_error"])
+			return
+		}
+
+		// Отправляем сообщение об успешном удалении
+		utils.SendMessage(bot, int64(chatID), fmt.Sprintf(l["note_deleted"], noteID))
+
+	case callbackQuery.Data == "cancel":
+		// Обработка кнопки "Отмена"
+		utils.SendMessage(bot, int64(chatID), l["action_canceled"])
+
+	default:
+		// Обрабатываем остальные действия
+		switch callbackQuery.Data {
+		case "add_note":
+			utils.SendMessage(bot, int64(chatID), l["add_note_prompt"])
+		case "view_notes":
+			ViewNotes(bot, callbackQuery.Message, l)
+		default:
+			utils.SendMessage(bot, int64(chatID), l["unknown_action"])
+		}
+	}
 }
