@@ -6,6 +6,9 @@ en:
   unknown_command: "Unknown command. Available commands:\n/start - Greeting\n/poll - Create poll\n/note - Create note\n/notes - View notes"
   note_creation_error: "An error occurred while creating the note."
   note_retrieval_error: "An error occurred while retrieving your notes."
+  invalid_note_id: "Invalid note ID. Please provide a valid numeric ID."
+  note_not_found: "Note not found or you don't have permission to delete it."
+  note_deleted: "Note with ID %d successfully deleted."
 
 ru:
   welcome: "Привет! Я бот для создания опросов и заметок. Используй /poll для опросов и /note для создания заметок."
@@ -15,3 +18,6 @@ ru:
   unknown_command: "Неизвестная команда. Доступные команды:\n/start - Приветствие\n/poll - Создать опрос\n/note - Создать заметку\n/notes - Посмотреть заметки"
   note_creation_error: "Произошла ошибка при создании заметки."
   note_retrieval_error: "Произошла ошибка при получении ваших заметок."
+  invalid_note_id: "Неверный ID заметки. Пожалуйста, укажите корректный числовое значение."
+  note_not_found: "Заметка не найдена или у вас нет прав на её удаление."
+  note_deleted: "Заметка с ID %d успешно удалена."

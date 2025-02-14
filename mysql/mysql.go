@@ -2,6 +2,7 @@
 package mysql
 
 import (
+	"database/sql"
 	"encoding/json"
 	"github.com/net22sky/telegram-bot/db" // Используем общий пакет db
 	"time"
@@ -64,4 +65,32 @@ func SavePollAnswer(userID int64, pollID string, optionIDs []int) error {
 
 	return db.Exec("INSERT INTO poll_answers (user_id, poll_id, option_ids) VALUES (?, ?, ?)",
 		userID, pollID, jsonOptionIDs) // Используем db.Exec
+}
+
+
+// GetNoteByID получает заметку по её ID.
+// Параметры:
+//   - noteID: ID заметки.
+//
+// Возвращает:
+//   - *Note: Указатель на структуру Note, если заметка найдена.
+//   - error: Ошибку, если запрос не удалось выполнить или заметка не существует.
+func GetNoteByID(noteID int64) (*Note, error) {
+	// Выполняем SQL-запрос
+	row, err := db.QueryRow("SELECT id, user_id, text, created_at FROM notes WHERE id = ?", noteID)
+
+	// Создаем временную переменную для хранения данных заметки
+	var note Note
+
+	// Сканируем результат запроса
+	err = row.Scan(&note.ID, &note.UserID, &note.Text, &note.CreatedAt)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // Заметка не найдена
+	}
+	if err != nil {
+		return nil, err // Произошла ошибка при сканировании
+	}
+
+	return &note, nil // Возвращаем найденную заметку
 }
