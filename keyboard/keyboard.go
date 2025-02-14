@@ -11,11 +11,11 @@ import (
 func StartKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Добавить заметку", "add_note"),
-			tgbotapi.NewInlineKeyboardButtonData("Удалить заметку", "delete_note"),
+			tgbotapi.NewInlineKeyboardButtonData("Добавить заметку", "note"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить заметку", "dellnote"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Список заметок", "view_notes"),
+			tgbotapi.NewInlineKeyboardButtonData("Список заметок", "notes"),
 		),
 	)
 }
