@@ -31,6 +31,10 @@ func StartPolling(bot *tgbotapi.BotAPI, locales handlers.Locales, lang string) {
 	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
+		if update.CallbackQuery != nil {
+			handlers.HandleCallbackQuery(bot, update.CallbackQuery, locales, lang)
+			return
+		}
 		if update.Message != nil {
 			//handlers.HandleMessage(bot, update.Message, locales, lang)
 			handlers.HandleMessage(bot, update, locales, lang)
