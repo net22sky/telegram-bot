@@ -1,0 +1,61 @@
+# Стандартные игнорируемые файлы для Go-проектов
+*.exe
+*.dll
+*.so
+*.o
+*.a
+*.test
+
+# Директории сборки
+bin/
+obj/
+out/
+
+# Кэш модулей Go
+go.sum
+/pkg/mod/
+
+# Локальные конфигурационные файлы
+config/config.yaml
+
+
+# Файлы журнала и временные файлы
+*.log
+*.tmp
+
+# Конфиденциальные данные
+.env
+
+
+# Docker-специфичные файлы
+.dockerenv
+.dockerinit
+
+# Кэш Docker
+**/*.cache
+**/.cache
+
+# Файлы IDE (например, VSCode, IntelliJ IDEA)
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Файлы логирования
+logs/
+log/
+
+# Бинарные файлы проекта
+
+
+# Файлы覆盖率 тестов
+coverage.out
+
+# Другие временные файлы
+__pycache__/
+*.sqlite3
