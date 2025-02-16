@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/net22sky/telegram-bot/mysql"
+	"github.com/net22sky/telegram-bot/db"
 	"log"
 	"strconv"
 	"strings"
@@ -17,8 +17,10 @@ import (
 func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
 	msg := tgbotapi.NewMessage(chatID, text) // Создание нового сообщения
 	if _, err := bot.Send(msg); err != nil { // Отправка сообщения
+
 		log.Printf("Ошибка при отправке сообщения: %v", err) // Логирование ошибки, если отправка не удалась
 	}
+	log.Printf("Ошибка при отправке сообщения: %v", msg) // Логирование ошибки, если отправка не удалась
 }
 
 // SendPoll отправляет опрос в указанный чат.
@@ -59,7 +61,7 @@ func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 	}
 
 	// Получаем заметку из базы данных
-	note, err := mysql.GetNoteByID(int64(noteID))
+	note, err := db.GetNoteByID(int64(noteID))
 	if err != nil {
 		log.Printf("Ошибка при получении заметки: %v", err)
 		SendMessage(bot, message.Chat.ID, l["note_retrieval_error"])
@@ -67,13 +69,13 @@ func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 	}
 
 	// Проверяем, что заметка существует и принадлежит текущему пользователю
-	if note == nil || note.UserID != userID {
+	if note == nil || note.UserID != uint(userID) {
 		SendMessage(bot, message.Chat.ID, l["note_not_found"])
 		return
 	}
 
 	// Удаляем заметку
-	err = mysql.DeleteNoteByID(noteID)
+	err = db.DeleteNoteByID(uint(noteID), uint(userID))
 	if err != nil {
 		log.Printf("Ошибка при удалении заметки: %v", err)
 		SendMessage(bot, message.Chat.ID, l["note_deletion_error"])

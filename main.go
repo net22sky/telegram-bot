@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"github.com/joho/godotenv"
 	"github.com/net22sky/telegram-bot/bot"
 	"github.com/net22sky/telegram-bot/config"
-	"github.com/net22sky/telegram-bot/mysql"
+	"github.com/net22sky/telegram-bot/db" // Импортируем пакет db
 	"log"
 	"os"
 )
@@ -18,12 +18,12 @@ func main() {
 	}
 
 	// Загружаем конфигурацию
-	cfg, err := config.LoadConfig("config/config.yaml")
+	cfg, err := config.LoadConfig("./config/config.yaml")
 	if err != nil {
 		log.Fatalf("Ошибка загрузки конфигурации: %v", err)
 	}
 
-	fmt.Println("config : ", cfg)
+	//fmt.Println("config : ", cfg)
 	// Загружаем строки локализации
 	locales, err := config.LoadLocales("config/locales.yaml")
 	if err != nil {
@@ -39,10 +39,10 @@ func main() {
 		log.Fatal("MYSQL_DSN не установлен")
 	}
 
-	// Инициализация MySQL
-	err = mysql.InitMySQL(mysqlDSN)
+	// Инициализация GORM
+	err = db.InitDB(mysqlDSN)
 	if err != nil {
-		log.Fatalf("Ошибка подключения к MySQL: %v", err)
+		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
 	// Создаем и настраиваем бота
 	tgBot, err := bot.NewBot(os.Getenv("TELEGRAM_BOT_TOKEN"), cfg.Telegram.Debug)
