@@ -27,52 +27,56 @@ const (
 // - locales: Локализованные строки для разных языков.
 // - lang: Язык пользователя.
 // func HandleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, locales Locales, lang string) {
-func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales, lang string) {
-
-	//log.Printf("[%s] %s", message.From.UserName, message.Text)
-
-	l := locales[lang] // Выбираем строки для текущего языка
-
-	// Проверяем, является ли обновление CallbackQuery
-	if update.CallbackQuery != nil {
-		HandleCallbackQuery(bot, update.CallbackQuery, locales, lang)
-		return
-	}
-
-	// Если это обычное сообщение
-	if update.Message != nil {
-		message := update.Message
-		// Обработка команды /note для создания заметки
-		if strings.HasPrefix(message.Text, "/note ") {
-			CreateNote(bot, message, l)
+	func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales, lang string) {
+		l := locales[lang] // Выбираем строки для текущего языка
+	
+		// Проверяем, является ли обновление CallbackQuery
+		if update.CallbackQuery != nil {
+			HandleCallbackQuery(bot, update.CallbackQuery, locales, lang)
 			return
 		}
-
-		// Проверяем текущее состояние пользователя
-		state, exists := userStates[message.From.ID]
-		if exists && state == StateAddingNote {
-			// Если пользователь добавляет заметку, сохраняем её
-			AddNote(bot, message, l)
-			delete(userStates, message.From.ID) // Очищаем состояние
-			return
-		}
-
-		// Обработка других команд
-		switch message.Command() {
-		case "notes":
-			ViewNotes(bot, message, l) // Показать список заметок пользователя
-		case "start":
-			SendStartMessage(bot, message.Chat.ID, l["welcome"]) // Отправить приветственное сообщение
-		case "poll":
-			utils.SendPoll(bot, message.Chat.ID) // Создать опрос
-		case "dellnote":
-			utils.DeleteNote(bot, message, l) // Создать опрос
-		default:
-			utils.SendMessage(bot, message.Chat.ID, l["unknown_command"]) // Сообщение о неизвестной команде
+	
+		// Если это обычное сообщение
+		if update.Message != nil {
+			message := update.Message
+	
+			// Проверяем текущее состояние пользователя
+			state, exists := userStates[message.From.ID]
+	
+			// Отладочные сообщения
+			utils.SendMessage(bot, message.Chat.ID, "HandleMessage")
+			utils.SendMessage(bot, message.Chat.ID, "UserID: "+strconv.FormatInt(message.From.ID, 10))
+			utils.SendMessage(bot, message.Chat.ID, "State: "+state)
+			utils.SendMessage(bot, message.Chat.ID, "Exists: "+strconv.FormatBool(exists))
+	
+			if exists && state == StateAddingNote {
+				// Если пользователь добавляет заметку, сохраняем её
+				AddNote(bot, message, l)
+				delete(userStates, message.From.ID) // Очищаем состояние
+				return
+			}
+	
+			// Обработка команды /note для создания заметки
+			if strings.HasPrefix(message.Text, "/note ") {
+				CreateNote(bot, message, l)
+				return
+			}
+	
+			// Обработка других команд
+			switch message.Command() {
+			case "notes":
+				ViewNotes(bot, message, l) // Показать список заметок пользователя
+			case "start":
+				SendStartMessage(bot, message.Chat.ID, l["welcome"]) // Отправить приветственное сообщение
+			case "poll":
+				utils.SendPoll(bot, message.Chat.ID) // Создать опрос
+			case "dellnote":
+				utils.DeleteNote(bot, message, l) // Удалить заметку
+			default:
+				utils.SendMessage(bot, message.Chat.ID, l["unknown_command"]) // Сообщение о неизвестной команде
+			}
 		}
 	}
-
-}
 
 // CreateNote создает новую заметку для пользователя.
 // Параметры:
@@ -155,7 +159,10 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 
 	l := locales[lang] // Выбираем строки для текущего языка
 
-	utils.SendMessage(bot, int64(chatID), "invalid_note_id")
+	// Отладочные сообщения
+	utils.SendMessage(bot, chatID, "HandleCallbackQuery")
+	utils.SendMessage(bot, chatID, "UserID: "+strconv.FormatInt(userID, 10))
+
 	// Обрабатываем действие по нажатию кнопки
 	switch {
 	case strings.HasPrefix(callbackQuery.Data, "delete_"):
@@ -164,7 +171,7 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		noteID, err := strconv.Atoi(noteIDStr)
 		if err != nil || noteID <= 0 {
 			log.Printf("Ошибка при парсинге ID заметки: %v", err)
-			utils.SendMessage(bot, int64(chatID), l["invalid_note_id"])
+			utils.SendMessage(bot, chatID, l["invalid_note_id"])
 			return
 		}
 
@@ -172,12 +179,12 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		note, err := mysql.GetNoteByID(int64(noteID))
 		if err != nil {
 			log.Printf("Ошибка при получении заметки: %v", err)
-			utils.SendMessage(bot, int64(chatID), l["note_retrieval_error"])
+			utils.SendMessage(bot, chatID, l["note_retrieval_error"])
 			return
 		}
 
 		if note == nil || note.UserID != userID {
-			utils.SendMessage(bot, int64(chatID), l["note_not_found"])
+			utils.SendMessage(bot, chatID, l["note_not_found"])
 			return
 		}
 
@@ -185,26 +192,29 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		err = mysql.DeleteNoteByID(noteID)
 		if err != nil {
 			log.Printf("Ошибка при удалении заметки: %v", err)
-			utils.SendMessage(bot, int64(chatID), l["note_deletion_error"])
+			utils.SendMessage(bot, chatID, l["note_deletion_error"])
 			return
 		}
 
 		// Отправляем сообщение об успешном удалении
-		utils.SendMessage(bot, int64(chatID), fmt.Sprintf(l["note_deleted"], noteID))
+		utils.SendMessage(bot, chatID, fmt.Sprintf(l["note_deleted"], noteID))
 
 	case callbackQuery.Data == "cancel":
 		// Обработка кнопки "Отмена"
-		utils.SendMessage(bot, int64(chatID), l["action_canceled"])
+		utils.SendMessage(bot, chatID, l["action_canceled"])
 
 	default:
 		// Обрабатываем остальные действия
 		switch callbackQuery.Data {
 		case "add_note":
-			utils.SendMessage(bot, int64(chatID), l["add_note_prompt"])
+			// Переходим в режим добавления заметки
+			userStates[userID] = StateAddingNote
+			utils.SendMessage(bot, chatID, l["enter_note_text"])
+			utils.SendMessage(bot, chatID, "State set to: "+StateAddingNote)
 		case "view_notes":
-			ViewNotesKeyboard(bot, int64(userID),int64(chatID), l)
+			ViewNotesKeyboard(bot, userID, chatID, l)
 		default:
-			utils.SendMessage(bot, int64(chatID), l["unknown_action"])
+			utils.SendMessage(bot, chatID, l["unknown_action"])
 		}
 	}
 }
@@ -268,4 +278,10 @@ func ViewNotesKeyboard(bot *tgbotapi.BotAPI, userID int64, ChatID int64, l map[s
 	}
 
 	utils.SendMessage(bot, ChatID, l["notes_list"]+response)
+}
+
+// cancelAction отменяет текущее действие пользователя.
+func cancelAction(bot *tgbotapi.BotAPI, chatID int64, l map[string]string) {
+    delete(userStates, chatID) // Очищаем состояние
+    utils.SendMessage(bot, chatID, l["action_canceled"])
 }
