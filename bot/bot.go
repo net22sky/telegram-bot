@@ -17,6 +17,29 @@ func NewBot(token string, debug bool) (*tgbotapi.BotAPI, error) {
 	return bot, nil
 }
 
+// SetupMenu настраивает меню команд для бота.
+func SetupMenu(bot *tgbotapi.BotAPI) {
+	// Создаем список команд
+	commands := []tgbotapi.BotCommand{
+		{Command: "start", Description: "Запустить бота"},
+		{Command: "help", Description: "Получить помощь"},
+		{Command: "notes", Description: "Посмотреть список заметок"},
+
+		{Command: "settings", Description: "Настройки языка и времени"},
+	}
+
+	// Создаем запрос на установку команд
+	setMyCommandsConfig := tgbotapi.NewSetMyCommands(commands...)
+
+	// Отправляем запрос
+	_, err := bot.Request(setMyCommandsConfig)
+	if err != nil {
+		log.Panicf("Ошибка при установке меню команд: %v", err)
+	}
+
+	log.Println("Меню команд успешно установлено")
+}
+
 // StartPolling запускает бота и начинает обработку входящих сообщений.
 // Параметры:
 //   - bot: Экземпляр Telegram-бота.
@@ -29,6 +52,8 @@ func StartPolling(bot *tgbotapi.BotAPI, locales handlers.Locales, lang string) {
 	u.Timeout = 60
 
 	updates := bot.GetUpdatesChan(u)
+
+	SetupMenu(bot)
 
 	for update := range updates {
 		if update.CallbackQuery != nil {

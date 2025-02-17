@@ -60,6 +60,8 @@ func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales
 			ViewNotes(bot, message, l) // Показать список заметок пользователя
 		case "start":
 			SendStartMessage(bot, message.Chat.ID, l["welcome"]) // Отправить приветственное сообщение
+		case "help":
+			utils.HandleHelp(bot, message, l) // Обработка команды /help
 		case "poll":
 			utils.SendPoll(bot, message.Chat.ID) // Создать опрос
 		case "dellnote":
@@ -143,13 +145,20 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 			return
 		}
 
-		if note == nil || note.UserID != uint(userID) {
+		// Получаем пользователя по Telegram ID
+		user, err := db.GetUserByID(userID)
+		if err != nil {
+			log.Printf("ошибка при получении пользователя: %v", err)
+			return
+		}
+
+		if note == nil || note.UserID != uint(user.ID) {
 			utils.SendMessage(bot, int64(chatID), l["note_not_found"])
 			return
 		}
 
 		// Удаляем заметку
-		err = db.DeleteNoteByID(uint(noteID),uint(userID))
+		err = db.DeleteNoteByID(uint(noteID), int64(userID))
 		if err != nil {
 			log.Printf("Ошибка при удалении заметки: %v", err)
 			utils.SendMessage(bot, int64(chatID), l["note_deletion_error"])
@@ -173,6 +182,8 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 
 		case "view_notes":
 			ViewNotesKeyboard(bot, callbackQuery, l)
+		case "deletes_note":
+			ShowDeleteNotesMenu(bot, callbackQuery, l)
 		default:
 			utils.SendMessage(bot, int64(chatID), l["unknown_action"])
 		}
@@ -199,16 +210,16 @@ func AddNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]strin
 	noteText := message.Text
 
 	// Проверяем, существует ли пользователь
-    user, err := db.GetUserByID(int64(userID))
-    if user == nil || err != nil {
-        // Создаем пользователя, если его нет
-        user, err = db.CreateUser(userID, message.From.UserName, message.From.FirstName)
-        if err != nil {
-            log.Printf("Ошибка при создании пользователя: %v", err)
-            utils.SendMessage(bot, message.Chat.ID, l["user_creation_error"])
-            return
-        }
-    }
+	user, err := db.GetUserByID(int64(userID))
+	if user == nil || err != nil {
+		// Создаем пользователя, если его нет
+		_, err = db.CreateUser(userID, message.From.UserName, message.From.FirstName)
+		if err != nil {
+			log.Printf("Ошибка при создании пользователя: %v", err)
+			utils.SendMessage(bot, message.Chat.ID, l["user_creation_error"])
+			return
+		}
+	}
 
 	// Создаем заметку
 	err = db.CreateNote(int64(userID), noteText)
@@ -247,14 +258,14 @@ func ViewNotesKeyboard(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQue
 	// Формирование списка заметок для отправки пользователю
 	var response string
 	for i, note := range notes {
-		response += fmt.Sprintf("%d. %s (ID: %d)\n", i+1, note.Text, note.ID)
+		response += fmt.Sprintf("%d. ✍️ %s (ID: %d)\n", i+1, note.Text, note.ID)
 	}
 
 	utils.SendMessage(bot, int64(chatID), l["notes_list"]+response)
 }
 
 // cancelAction отменяет текущее действие пользователя.
-func cancelAction(bot *tgbotapi.BotAPI, chatID int64, userID int64, l map[string]string) {
+func CancelAction(bot *tgbotapi.BotAPI, chatID int64, userID int64, l map[string]string) {
 
 	state.DeleteUserState(userID)
 	utils.SendMessage(bot, chatID, l["action_canceled"])
@@ -288,4 +299,37 @@ func ViewNotes(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]str
 	}
 
 	utils.SendMessage(bot, message.Chat.ID, l["notes_list"]+response)
+}
+
+// ShowDeleteNotesMenu показывает пользователю меню для удаления заметок.
+func ShowDeleteNotesMenu(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, l map[string]string) {
+	////userID := callbackQuery.From.ID
+	//chatID := callbackQuery.Chat.ID
+
+	chatID := callbackQuery.Message.Chat.ID
+	userID := callbackQuery.From.ID
+
+	// Получаем список заметок пользователя
+	notes, err := db.GetNotes(int64(userID))
+	if err != nil {
+		log.Printf("Ошибка при получении заметок: %v", err)
+		utils.SendMessage(bot, chatID, l["note_retrieval_error"])
+		return
+	}
+
+	if len(notes) == 0 {
+		utils.SendMessage(bot, chatID, l["no_notes"])
+		return
+	}
+
+	// Создаем Inline Keyboard для удаления заметок
+	keyboard := keyboard.DeleteNotesKeyboard(notes)
+
+	// Отправляем сообщение с клавиатурой
+	msg := tgbotapi.NewMessage(chatID, l["delete_note_prompt"])
+	msg.ReplyMarkup = keyboard
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Ошибка при отправке сообщения: %v", err)
+	}
 }

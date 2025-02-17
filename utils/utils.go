@@ -4,6 +4,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/net22sky/telegram-bot/db"
+
 	"log"
 	"strconv"
 	"strings"
@@ -68,14 +69,21 @@ func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 		return
 	}
 
+	// Получаем пользователя по Telegram ID
+	user, err := db.GetUserByID(userID)
+	if err != nil {
+		log.Printf("ошибка при получении пользователя: %v", err)
+		return
+	}
+
 	// Проверяем, что заметка существует и принадлежит текущему пользователю
-	if note == nil || note.UserID != uint(userID) {
+	if note == nil || note.UserID != uint(user.ID) {
 		SendMessage(bot, message.Chat.ID, l["note_not_found"])
 		return
 	}
 
 	// Удаляем заметку
-	err = db.DeleteNoteByID(uint(noteID), uint(userID))
+	err = db.DeleteNoteByID(uint(noteID), int64(userID))
 	if err != nil {
 		log.Printf("Ошибка при удалении заметки: %v", err)
 		SendMessage(bot, message.Chat.ID, l["note_deletion_error"])
@@ -84,4 +92,11 @@ func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 
 	// Отправляем сообщение об успешном удалении
 	SendMessage(bot, message.Chat.ID, fmt.Sprintf(l["note_deleted"], noteID))
+}
+
+func HandleHelp(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]string) {
+	chatID := message.Chat.ID
+
+	// Отправляем сообщение с помощью локализованного текста
+	SendMessage(bot, chatID, l["help_message"])
 }

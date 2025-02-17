@@ -13,34 +13,39 @@ var DB *gorm.DB // Глобальная переменная для хранен
 
 // User представляет пользователя.
 type User struct {
-    ID         uint      `gorm:"primaryKey"` // Первичный ключ типа uint
-    TelegramID int64     `gorm:"unique;not null"`
-    Username   string    `gorm:"default:null"`
-    FirstName  string    `gorm:"default:null"`
-    Language   string    `gorm:"default:'ru'"`
-    CreatedAt  time.Time `gorm:"autoCreateTime"`
+	ID         uint      `gorm:"primaryKey"`
+	TelegramID int64     `gorm:"unique;not null"`
+	IsBot      bool      `gorm:"default:false"`
+	Username   string    `gorm:"default:null"`
+	FirstName  string    `gorm:"default:null"`
+	LastName   string    `gorm:"default:null"`
+	IsPremium  bool      `gorm:"default:false"`
+	Language   string    `gorm:"default:'ru'"`
+	Timezone   string    `gorm:"default:'UTC'"`
+	CreatedAt  time.Time `gorm:"autoCreateTime"`
 }
 
 // Note представляет заметку пользователя.
 type Note struct {
-    ID        uint      `gorm:"primaryKey"`
-    UserID    uint      `gorm:"not null"` // Внешний ключ на таблицу users
-    Text      string    `gorm:"not null"`
-    CreatedAt time.Time `gorm:"autoCreateTime"`
+	ID        uint      `gorm:"primaryKey"`
+	UserID    uint      `gorm:"not null"` // Внешний ключ на таблицу users
+	Text      string    `gorm:"not null"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 
-    User User `gorm:"constraint:OnUpdate:CASCADE;OnDelete:CASCADE;"` // Связь с пользователем
+	User User `gorm:"constraint:OnUpdate:CASCADE;OnDelete:CASCADE;"` // Связь с пользователем
 }
 
 // PollAnswer представляет ответ на опрос.
 type PollAnswer struct {
-    ID        uint      `gorm:"primaryKey"`
-    UserID    uint      `gorm:"not null"` // Внешний ключ на таблицу users
-    PollID    string    `gorm:"not null"`
-    OptionIDs []int     `gorm:"serializer:json"`
-    CreatedAt time.Time `gorm:"autoCreateTime"`
+	ID        uint      `gorm:"primaryKey"`
+	UserID    uint      `gorm:"not null"` // Внешний ключ на таблицу users
+	PollID    string    `gorm:"not null"`
+	OptionIDs []int     `gorm:"serializer:json"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 
-    User User `gorm:"constraint:OnUpdate:CASCADE;OnDelete:CASCADE;"` // Связь с пользователем
+	User User `gorm:"constraint:OnUpdate:CASCADE;OnDelete:CASCADE;"` // Связь с пользователем
 }
+
 // InitDB инициализирует подключение к MySQL через GORM.
 func InitDB(dsn string) error {
 	var err error
@@ -53,24 +58,24 @@ func InitDB(dsn string) error {
 
 	log.Println("Подключено к базе данных через GORM")
 
-	 // Выполняем автоматическую миграцию таблиц
-	 err = DB.AutoMigrate(&User{}, &Note{}, &PollAnswer{})
-	 if err != nil {
-		 return fmt.Errorf("ошибка при миграции таблиц: %w", err)
-	 }
- 
+	// Выполняем автоматическую миграцию таблиц
+	err = DB.AutoMigrate(&User{}, &Note{}, &PollAnswer{})
+	if err != nil {
+		return fmt.Errorf("ошибка при миграции таблиц: %w", err)
+	}
+
 	return nil
 }
 
 // CreateNote создает новую заметку для пользователя.
 func CreateNote(telegramID int64, text string) error {
-	
-	 // Получаем пользователя по Telegram ID
-	 user, err := GetUserByID(telegramID)
-	 if err != nil {
-		 return fmt.Errorf("ошибка при получении пользователя: %w", err)
-	 }
- 
+
+	// Получаем пользователя по Telegram ID
+	user, err := GetUserByID(telegramID)
+	if err != nil {
+		return fmt.Errorf("ошибка при получении пользователя: %w", err)
+	}
+
 	/* // Если пользователь не найден, создаем его
 	 if user == nil {
 		 var newUser User
@@ -80,8 +85,8 @@ func CreateNote(telegramID int64, text string) error {
 		 }
 		 log.Printf("Пользователь %d успешно создан", telegramID)
 	 }*/
- 
-	 note := Note{
+
+	note := Note{
 		UserID: uint(user.ID),
 		Text:   text,
 	}
@@ -101,9 +106,9 @@ func GetNotes(userID int64) ([]Note, error) {
 
 	var notes []Note
 
-	 // Получаем пользователя по Telegram ID
-	 user, _ := GetUserByID(userID)
-	 /*if err != nil {
+	// Получаем пользователя по Telegram ID
+	user, _ := GetUserByID(userID)
+	/*if err != nil {
 		 return err
 	 }*/
 
@@ -121,47 +126,53 @@ func GetNotes(userID int64) ([]Note, error) {
 }
 
 // DeleteNoteByID удаляет заметку по её ID.
-func DeleteNoteByID(noteID uint, userID uint) error {
-    // Находим заметку по ID
-    var note Note
-    result := DB.First(&note, noteID)
-    if result.Error != nil {
-        if result.Error == gorm.ErrRecordNotFound {
-            return fmt.Errorf("заметка с ID %d не найдена", noteID)
-        }
-        return fmt.Errorf("ошибка при получении заметки: %w", result.Error)
-    }
+func DeleteNoteByID(noteID uint, userID int64) error {
+	// Находим заметку по ID
+	var note Note
+	result := DB.First(&note, noteID)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return fmt.Errorf("заметка с ID %d не найдена", noteID)
+		}
+		return fmt.Errorf("ошибка при получении заметки: %w", result.Error)
+	}
 
-    // Проверяем, что заметка принадлежит текущему пользователю
-    if note.UserID != userID {
-        return fmt.Errorf("заметка с ID %d не принадлежит пользователю %d", noteID, userID)
-    }
+	user, err := GetUserByID(userID)
+	if err != nil {
+		return fmt.Errorf("ошибка при получении пользователя: %w", err)
+	}
 
-    // Удаляем заметку
-    result = DB.Delete(&note)
-    if result.Error != nil {
-        return fmt.Errorf("ошибка при удалении заметки: %w", result.Error)
-    }
+	// Проверяем, что заметка принадлежит текущему пользователю
+	if note.UserID != user.ID {
+		return fmt.Errorf("заметка с ID %d не принадлежит пользователю %d", noteID, userID)
+	}
 
-    log.Printf("Заметка с ID %d успешно удалена", noteID)
-    return nil
+	// Удаляем заметку
+	result = DB.Delete(&note)
+	if result.Error != nil {
+		return fmt.Errorf("ошибка при удалении заметки: %w", result.Error)
+	}
+
+	log.Printf("Заметка с ID %d успешно удалена", noteID)
+	return nil
 }
+
 // SavePollAnswer сохраняет ответ на опрос.
 func SavePollAnswer(userID uint, pollID string, optionIDs []int) error {
-    pollAnswer := PollAnswer{
-        UserID:    userID,
-        PollID:    pollID,
-        OptionIDs: optionIDs,
-    }
+	pollAnswer := PollAnswer{
+		UserID:    userID,
+		PollID:    pollID,
+		OptionIDs: optionIDs,
+	}
 
-    // Создаем запись в таблице poll_answers
-    result := DB.Create(&pollAnswer)
-    if result.Error != nil {
-        return fmt.Errorf("ошибка при сохранении ответа на опрос: %w", result.Error)
-    }
+	// Создаем запись в таблице poll_answers
+	result := DB.Create(&pollAnswer)
+	if result.Error != nil {
+		return fmt.Errorf("ошибка при сохранении ответа на опрос: %w", result.Error)
+	}
 
-    log.Printf("Ответ на опрос успешно сохранен: %+v", pollAnswer)
-    return nil
+	log.Printf("Ответ на опрос успешно сохранен: %+v", pollAnswer)
+	return nil
 }
 
 // GetNoteByID получает заметку по её ID.
@@ -182,40 +193,39 @@ func GetNoteByID(noteID int64) (*Note, error) {
 	return &note, nil
 }
 
-
 // CreateUser создает нового пользователя или обновляет существующего.
 func CreateUser(telegramID int64, username string, firstName string) (*User, error) {
-    user := User{
-        TelegramID: telegramID,
-        Username:   username,
-        FirstName:  firstName,
-    }
+	user := User{
+		TelegramID: telegramID,
+		Username:   username,
+		FirstName:  firstName,
+	}
 
-    // Находим или создаём пользователя
-    result := DB.FirstOrCreate(&user, User{TelegramID: telegramID})
-    if result.Error != nil {
-        return nil, fmt.Errorf("ошибка при создании пользователя: %w", result.Error)
-    }
+	// Находим или создаём пользователя
+	result := DB.FirstOrCreate(&user, User{TelegramID: telegramID})
+	if result.Error != nil {
+		return nil, fmt.Errorf("ошибка при создании пользователя: %w", result.Error)
+	}
 
-    log.Printf("Пользователь %d успешно создан/обновлен: %+v", telegramID, user)
-    return &user, nil
+	log.Printf("Пользователь %d успешно создан/обновлен: %+v", telegramID, user)
+	return &user, nil
 }
 
 // GetUserByID получает пользователя по его Telegram ID.
 func GetUserByID(telegramID int64) (*User, error) {
-    var user User
+	var user User
 
-    // Находим пользователя по Telegram ID
-    result := DB.First(&user, "telegram_id = ?", telegramID)
-    if result.Error != nil {
-        if result.Error == gorm.ErrRecordNotFound {
-            log.Printf("Пользователь %d не найден", telegramID)
-            return nil, nil
-        }
-        return nil, fmt.Errorf("ошибка при получении пользователя: %w", result.Error)
-    }
+	// Находим пользователя по Telegram ID
+	result := DB.First(&user, "telegram_id = ?", telegramID)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			log.Printf("Пользователь %d не найден", telegramID)
+			return nil, nil
+		}
+		return nil, fmt.Errorf("ошибка при получении пользователя: %w", result.Error)
+	}
 
-    log.Printf("Пользователь %d успешно загружен: %+v", telegramID, user)
+	log.Printf("Пользователь %d успешно загружен: %+v", telegramID, user)
 
 	return &user, nil
 }

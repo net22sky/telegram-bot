@@ -1,9 +1,9 @@
 en:
-  welcome: "Hello! I'm a bot for creating polls and notes. Use /poll for polls and /note to create notes."
+  welcome: "Hello! I'm a bot for creating notes. Use /help for help and /note to create notes."
   note_created: "Note successfully created: %s"
   no_notes: "You don't have any notes yet."
   notes_list: "Your notes:\n"
-  unknown_command: "Unknown command. Available commands:\n/start - Greeting\n/poll - Create poll\n/note - Create note\n/notes - View notes"
+  unknown_command: "Unknown command. Use /help for help and /note to create notes."
   note_creation_error: "An error occurred while creating the note."
   note_retrieval_error: "An error occurred while retrieving your notes."
   invalid_note_id: "Invalid note ID. Please provide a valid numeric ID."
@@ -14,13 +14,15 @@ en:
   add_note_prompt: "Please send your note in the format: /note <text>"
   delete_note_prompt: "Select a note to delete:"
   enter_note_text: "Please enter the note text:"
+  help_message: "Hello! I'm a bot for creating notes. Available commands:\n/start - Start the bot\n/help - Get help\n/notes - View your notes\n/settings - Change settings\n/delete_all_notes - Delete all your notes"
+
 
 ru:
-  welcome: "Привет! Я бот для создания опросов и заметок. Используй /poll для опросов и /note для создания заметок."
+  welcome: "Привет! Я бот для создания заметок. Используй /help для спарвки и /note для создания заметок."
   note_created: "Заметка успешно создана: %s"
   no_notes: "У вас пока нет заметок."
   notes_list: "Ваши заметки:\n"
-  unknown_command: "Неизвестная команда. Доступные команды:\n/start - Приветствие\n/poll - Создать опрос\n/note - Создать заметку\n/notes - Посмотреть заметки"
+  unknown_command: "Неизвестная команда. Используй /help для спарвки и /note для создания заметок."
   note_creation_error: "Произошла ошибка при создании заметки."
   note_retrieval_error: "Произошла ошибка при получении ваших заметок."
   invalid_note_id: "Неверный ID заметки. Пожалуйста, укажите корректное числовое значение."
@@ -31,3 +33,4 @@ ru:
   add_note_prompt: "Пожалуйста, отправьте заметку в формате: /note <текст>"
   delete_note_prompt: "Выберите заметку для удаления:"
   enter_note_text: "Пожалуйста, введите текст заметки:"
+  help_message: "Привет! Я бот для создания заметок. Доступные команды:\n/start - Запустить бота\n/help - Получить помощь\n/notes - Посмотреть ваши заметки\n/settings - Изменить настройки\n/delete_all_notes - Удалить все ваши заметки"
