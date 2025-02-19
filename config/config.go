@@ -2,10 +2,9 @@ package config
 
 import (
 	"fmt"
-
-	"os"
-
 	"gopkg.in/yaml.v3"
+	"log"
+	"os"
 )
 
 // Config содержит настройки бота
@@ -35,21 +34,20 @@ func LoadConfig(filename string) (*Config, error) {
 	return &config, nil
 }
 
-// LoadLocales загружает строки локализации из файла
-func LoadLocales(filename string) (map[string]map[string]string, error) {
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return nil, fmt.Errorf("locales file not found: %s", filename)
-	}
-
+// LoadLocales загружает строки локализации из YAML-файла.
+// LoadLocales загружает строки локализации из YAML-файла.
+func LoadLocales(filename string) (map[string]map[string]interface{}, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ошибка чтения файла локализации: %w", err)
 	}
 
-	var locales map[string]map[string]string
-	if err := yaml.Unmarshal(data, &locales); err != nil {
-		return nil, err
+	var locales map[string]map[string]interface{}
+	err = yaml.Unmarshal(data, &locales)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка парсинга файла локализации: %w", err)
 	}
 
+	log.Println("Строки локализации успешно загружены")
 	return locales, nil
 }

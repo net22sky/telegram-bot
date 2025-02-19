@@ -45,7 +45,7 @@ func SetupMenu(bot *tgbotapi.BotAPI) {
 //   - bot: Экземпляр Telegram-бота.
 //   - locales: Строки локализации.
 //   - lang: Язык пользователя.
-func StartPolling(bot *tgbotapi.BotAPI, locales handlers.Locales, lang string) {
+func StartPolling(bot *tgbotapi.BotAPI, locales map[string]map[string]interface{}, lang string) {
 	log.Printf("Авторизован как %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)

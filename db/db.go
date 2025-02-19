@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"time"
+	"github.com/net22sky/telegram-bot/db/models"
 )
 
 var DB *gorm.DB // Глобальная переменная для хранения экземпляра GORM

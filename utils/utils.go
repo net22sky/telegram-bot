@@ -42,10 +42,10 @@ func SendPoll(bot *tgbotapi.BotAPI, chatID int64) {
 //   - bot: Экземпляр Telegram-бота.
 //   - message: Сообщение от пользователя.
 //   - l: Строки локализации для текущего языка.
-func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]string) {
+func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]interface{}) {
 	parts := strings.SplitN(message.Text, " ", 2)
 	if len(parts) < 2 || parts[1] == "" {
-		SendMessage(bot, message.Chat.ID, l["unknown_command"])
+		SendMessage(bot, message.Chat.ID, GetLocalizedString(l, "unknown_command"))
 		return
 	}
 
@@ -57,7 +57,7 @@ func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 	noteID, err := strconv.Atoi(noteIDStr)
 	if err != nil || noteID <= 0 {
 		log.Printf("Ошибка при преобразовании ID заметки: %v", err)
-		SendMessage(bot, message.Chat.ID, l["invalid_note_id"])
+		SendMessage(bot, message.Chat.ID, GetLocalizedString(l, "invalid_note_id"))
 		return
 	}
 
@@ -65,7 +65,7 @@ func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 	note, err := db.GetNoteByID(int64(noteID))
 	if err != nil {
 		log.Printf("Ошибка при получении заметки: %v", err)
-		SendMessage(bot, message.Chat.ID, l["note_retrieval_error"])
+		SendMessage(bot, message.Chat.ID, GetLocalizedString(l, "note_retrieval_error"))
 		return
 	}
 
@@ -78,7 +78,7 @@ func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 
 	// Проверяем, что заметка существует и принадлежит текущему пользователю
 	if note == nil || note.UserID != uint(user.ID) {
-		SendMessage(bot, message.Chat.ID, l["note_not_found"])
+		SendMessage(bot, message.Chat.ID, GetLocalizedString(l, "note_not_found"))
 		return
 	}
 
@@ -86,17 +86,28 @@ func DeleteNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 	err = db.DeleteNoteByID(uint(noteID), int64(userID))
 	if err != nil {
 		log.Printf("Ошибка при удалении заметки: %v", err)
-		SendMessage(bot, message.Chat.ID, l["note_deletion_error"])
+		SendMessage(bot, message.Chat.ID, GetLocalizedString(l, "note_deletion_error"))
 		return
 	}
 
 	// Отправляем сообщение об успешном удалении
-	SendMessage(bot, message.Chat.ID, fmt.Sprintf(l["note_deleted"], noteID))
+	SendMessage(bot, message.Chat.ID, fmt.Sprintf(GetLocalizedString(l, "note_deleted"), noteID))
 }
 
-func HandleHelp(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]string) {
+func HandleHelp(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]interface{}) {
 	chatID := message.Chat.ID
 
 	// Отправляем сообщение с помощью локализованного текста
-	SendMessage(bot, chatID, l["help_message"])
+	SendMessage(bot, chatID, GetLocalizedString(l, "help_message"))
+}
+
+// getLocalizedString получает локализованную строку по ключу.
+func GetLocalizedString(l map[string]interface{}, key string) string {
+	if value, exists := l[key]; exists {
+		if strValue, ok := value.(string); ok {
+			return strValue
+		}
+		log.Printf("Ошибка преобразования строки для ключа %s", key)
+	}
+	return "Строка не найдена"
 }

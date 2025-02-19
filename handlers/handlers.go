@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/net22sky/telegram-bot/db"
 	"github.com/net22sky/telegram-bot/keyboard"
 	"github.com/net22sky/telegram-bot/state"
@@ -13,7 +13,8 @@ import (
 )
 
 // Locales содержит строки для разных языков, используемые для локализации сообщений бота.
-type Locales map[string]map[string]string
+// type Locales map[string]map[string]string
+type Locales map[string]map[string]interface{}
 
 // HandleMessage обрабатывает входящие текстовые сообщения от пользователей.
 // Параметры:
@@ -59,7 +60,7 @@ func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales
 		case "notes":
 			ViewNotes(bot, message, l) // Показать список заметок пользователя
 		case "start":
-			SendStartMessage(bot, message.Chat.ID, l["welcome"]) // Отправить приветственное сообщение
+			SendStartMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "welcome")) // Отправить приветственное сообщение
 		case "help":
 			utils.HandleHelp(bot, message, l) // Обработка команды /help
 		case "poll":
@@ -67,7 +68,7 @@ func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales
 		case "dellnote":
 			utils.DeleteNote(bot, message, l) // Создать опрос
 		default:
-			utils.SendMessage(bot, message.Chat.ID, l["unknown_command"]) // Сообщение о неизвестной команде
+			utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "unknown_command")) // Сообщение о неизвестной команде
 		}
 	}
 
@@ -78,10 +79,10 @@ func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales
 // - bot: Экземпляр Telegram-бота.
 // - message: Входящее сообщение от пользователя.
 // - l: Локализованные строки для текущего языка.
-func CreateNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]string) {
+func CreateNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]interface{}) {
 	parts := strings.SplitN(message.Text, " ", 2)
 	if len(parts) < 2 || parts[1] == "" {
-		utils.SendMessage(bot, message.Chat.ID, l["unknown_command"])
+		utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "unknown_command"))
 		return
 	}
 
@@ -92,11 +93,11 @@ func CreateNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]st
 	err := db.CreateNote(int64(userID), noteText)
 	if err != nil {
 		log.Printf("Ошибка при создании заметки: %v", err)
-		utils.SendMessage(bot, message.Chat.ID, l["note_creation_error"])
+		utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "note_creation_error"))
 		return
 	}
 
-	utils.SendMessage(bot, message.Chat.ID, fmt.Sprintf(l["note_created"], noteText))
+	utils.SendMessage(bot, message.Chat.ID, fmt.Sprintf(utils.GetLocalizedString(l, "note_created"), noteText))
 }
 
 // HandlePollAnswer обрабатывает ответы пользователей на опросы.
@@ -133,7 +134,7 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		noteID, err := strconv.Atoi(noteIDStr)
 		if err != nil || noteID <= 0 {
 			log.Printf("Ошибка при парсинге ID заметки: %v", err)
-			utils.SendMessage(bot, int64(chatID), l["invalid_note_id"])
+			utils.SendMessage(bot, int64(chatID), utils.GetLocalizedString(l, "invalid_note_id"))
 			return
 		}
 
@@ -141,7 +142,7 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		note, err := db.GetNoteByID(int64(noteID))
 		if err != nil {
 			log.Printf("Ошибка при получении заметки: %v", err)
-			utils.SendMessage(bot, int64(chatID), l["note_retrieval_error"])
+			utils.SendMessage(bot, int64(chatID), utils.GetLocalizedString(l, "note_retrieval_error"))
 			return
 		}
 
@@ -153,7 +154,7 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		}
 
 		if note == nil || note.UserID != uint(user.ID) {
-			utils.SendMessage(bot, int64(chatID), l["note_not_found"])
+			utils.SendMessage(bot, int64(chatID), utils.GetLocalizedString(l, "note_not_found"))
 			return
 		}
 
@@ -161,31 +162,35 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		err = db.DeleteNoteByID(uint(noteID), int64(userID))
 		if err != nil {
 			log.Printf("Ошибка при удалении заметки: %v", err)
-			utils.SendMessage(bot, int64(chatID), l["note_deletion_error"])
+			utils.SendMessage(bot, int64(chatID), utils.GetLocalizedString(l, "note_deletion_error"))
 			return
 		}
 
 		// Отправляем сообщение об успешном удалении
-		utils.SendMessage(bot, int64(chatID), fmt.Sprintf(l["note_deleted"], noteID))
+		utils.SendMessage(bot, int64(chatID), fmt.Sprintf(utils.GetLocalizedString(l, "note_deleted"), noteID))
 
 	case callbackQuery.Data == "cancel":
 		// Обработка кнопки "Отмена"
-		utils.SendMessage(bot, int64(chatID), l["action_canceled"])
+		utils.SendMessage(bot, int64(chatID), utils.GetLocalizedString(l, "action_canceled"))
 
 	default:
 		// Обрабатываем остальные действия
 		switch callbackQuery.Data {
+		case "notes_menu":
+			NotesKeyboard(bot, callbackQuery, l)
+		case "reminders_menu":
+			RemindersKeyboard(bot, callbackQuery, l)
 		case "add_note":
 			// Переходим в режим добавления заметки
 			state.SetUserState(userID, state.StateAddingNote)
-			utils.SendMessage(bot, chatID, l["enter_note_text"])
+			utils.SendMessage(bot, chatID, utils.GetLocalizedString(l, "enter_note_text"))
 
 		case "view_notes":
 			ViewNotesKeyboard(bot, callbackQuery, l)
 		case "deletes_note":
 			ShowDeleteNotesMenu(bot, callbackQuery, l)
 		default:
-			utils.SendMessage(bot, int64(chatID), l["unknown_action"])
+			utils.SendMessage(bot, int64(chatID), utils.GetLocalizedString(l, "unknown_action"))
 		}
 	}
 }
@@ -195,8 +200,26 @@ func SendStartMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
 	// Создаем Inline Keyboard через пакет keyboard
 	keyboard := keyboard.StartKeyboard()
 
+	// Создаем Reply-клавиатуру
+	/*keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Кнопка 1"),
+			tgbotapi.NewKeyboardButton("Кнопка 2"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Кнопка 3"),
+			tgbotapi.NewKeyboardButton("Кнопка 4"),
+		),
+	)*/
+
+	// Отправляем сообщение с клавиатурой
+	//msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберите опцию:")
+	//msg.ReplyMarkup = keyboard
+	//bot.Send(msg)
+	//_,err := keyboard.RemoveReplyKeyboard(bot, chatID, text)
 	// Отправляем приветственное сообщение с клавиатурой
 	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	msg.ReplyMarkup = keyboard
 
 	if _, err := bot.Send(msg); err != nil {
@@ -205,7 +228,7 @@ func SendStartMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
 }
 
 // AddNote добавляет заметку для пользователя.
-func AddNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]string) {
+func AddNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]interface{}) {
 	userID := message.From.ID
 	noteText := message.Text
 
@@ -216,7 +239,7 @@ func AddNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]strin
 		_, err = db.CreateUser(userID, message.From.UserName, message.From.FirstName)
 		if err != nil {
 			log.Printf("Ошибка при создании пользователя: %v", err)
-			utils.SendMessage(bot, message.Chat.ID, l["user_creation_error"])
+			utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "user_creation_error"))
 			return
 		}
 	}
@@ -225,20 +248,63 @@ func AddNote(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]strin
 	err = db.CreateNote(int64(userID), noteText)
 	if err != nil {
 		log.Printf("Ошибка при создании заметки: %v", err)
-		utils.SendMessage(bot, message.Chat.ID, l["note_creation_error"])
+		utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "note_creation_error"))
 		return
 	}
 
 	// Уведомляем пользователя об успешном создании заметки
-	utils.SendMessage(bot, message.Chat.ID, fmt.Sprintf(l["note_created"], noteText))
+	utils.SendMessage(bot, message.Chat.ID, fmt.Sprintf(utils.GetLocalizedString(l, "note_created"), noteText))
 }
 
+// RemindersKeyboard показывает меню напоминаний.
+// Параметры:
+// - bot: Экземпляр Telegram-бота.
+// - message: Входящее сообщение от пользователя.
+// - l: Локализованные строки для текущего языка.
+func RemindersKeyboard(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, l map[string]interface{}) {
+	chatID := callbackQuery.Message.Chat.ID
+	
+	keyboard := keyboard.RemindersKeyboard()
+
+	text := utils.GetLocalizedString(l, "notes_menu")
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+	msg.ReplyMarkup = keyboard
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Ошибка при отправке сообщения: %v", err)
+	}
+
+}
+
+// NotesKeyboard показывает меню заметок.
+// Параметры:
+// - bot: Экземпляр Telegram-бота.
+// - message: Входящее сообщение от пользователя.
+// - l: Локализованные строки для текущего языка.
+func NotesKeyboard(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, l map[string]interface{}) {
+	chatID := callbackQuery.Message.Chat.ID
+	
+	keyboard := keyboard.NotesKeyboard()
+
+	text := utils.GetLocalizedString(l, "notes_menu")
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+	msg.ReplyMarkup = keyboard
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Ошибка при отправке сообщения: %v", err)
+	}
+
+}
 // ViewNotesKeyboard показывает все заметки пользователя.
 // Параметры:
 // - bot: Экземпляр Telegram-бота.
 // - message: Входящее сообщение от пользователя.
 // - l: Локализованные строки для текущего языка.
-func ViewNotesKeyboard(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, l map[string]string) {
+func ViewNotesKeyboard(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, l map[string]interface{}) {
 	chatID := callbackQuery.Message.Chat.ID
 	userID := callbackQuery.From.ID
 
@@ -246,12 +312,12 @@ func ViewNotesKeyboard(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQue
 	notes, err := db.GetNotes(int64(userID))
 	if err != nil {
 		log.Printf("Ошибка при получении заметок: %v", err)
-		utils.SendMessage(bot, int64(chatID), l["note_retrieval_error"])
+		utils.SendMessage(bot, int64(chatID), utils.GetLocalizedString(l, "note_retrieval_error"))
 		return
 	}
 
 	if len(notes) == 0 {
-		utils.SendMessage(bot, int64(chatID), l["no_notes"])
+		utils.SendMessage(bot, int64(chatID), utils.GetLocalizedString(l, "no_notes"))
 		return
 	}
 
@@ -261,7 +327,7 @@ func ViewNotesKeyboard(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQue
 		response += fmt.Sprintf("%d. ✍️ %s (ID: %d)\n", i+1, note.Text, note.ID)
 	}
 
-	utils.SendMessage(bot, int64(chatID), l["notes_list"]+response)
+	utils.SendMessage(bot, int64(chatID), utils.GetLocalizedString(l, "notes_list")+response)
 }
 
 // cancelAction отменяет текущее действие пользователя.
@@ -276,19 +342,19 @@ func CancelAction(bot *tgbotapi.BotAPI, chatID int64, userID int64, l map[string
 // - bot: Экземпляр Telegram-бота.
 // - message: Входящее сообщение от пользователя.
 // - l: Локализованные строки для текущего языка.
-func ViewNotes(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]string) {
+func ViewNotes(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]interface{}) {
 	userID := message.From.ID
 
 	// Получение списка заметок из базы данных
 	notes, err := db.GetNotes(userID)
 	if err != nil {
 		log.Printf("Ошибка при получении заметок: %v", err)
-		utils.SendMessage(bot, message.Chat.ID, l["note_retrieval_error"])
+		utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "note_retrieval_error"))
 		return
 	}
 
 	if len(notes) == 0 {
-		utils.SendMessage(bot, message.Chat.ID, l["no_notes"])
+		utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "no_notes"))
 		return
 	}
 
@@ -298,11 +364,11 @@ func ViewNotes(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]str
 		response += fmt.Sprintf("%d. %s (ID: %d)\n", i+1, note.Text, note.ID)
 	}
 
-	utils.SendMessage(bot, message.Chat.ID, l["notes_list"]+response)
+	utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "notes_list")+response)
 }
 
 // ShowDeleteNotesMenu показывает пользователю меню для удаления заметок.
-func ShowDeleteNotesMenu(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, l map[string]string) {
+func ShowDeleteNotesMenu(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, l map[string]interface{}) {
 	////userID := callbackQuery.From.ID
 	//chatID := callbackQuery.Chat.ID
 
@@ -313,12 +379,12 @@ func ShowDeleteNotesMenu(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 	notes, err := db.GetNotes(int64(userID))
 	if err != nil {
 		log.Printf("Ошибка при получении заметок: %v", err)
-		utils.SendMessage(bot, chatID, l["note_retrieval_error"])
+		utils.SendMessage(bot, chatID, utils.GetLocalizedString(l, "note_retrieval_error"))
 		return
 	}
 
 	if len(notes) == 0 {
-		utils.SendMessage(bot, chatID, l["no_notes"])
+		utils.SendMessage(bot, chatID, utils.GetLocalizedString(l, "no_notes"))
 		return
 	}
 
@@ -326,7 +392,32 @@ func ShowDeleteNotesMenu(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 	keyboard := keyboard.DeleteNotesKeyboard(notes)
 
 	// Отправляем сообщение с клавиатурой
-	msg := tgbotapi.NewMessage(chatID, l["delete_note_prompt"])
+	msg := tgbotapi.NewMessage(chatID, utils.GetLocalizedString(l, "delete_note_prompt"))
+	msg.ReplyMarkup = keyboard
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Ошибка при отправке сообщения: %v", err)
+	}
+}
+
+func ShowMonthsMenu(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]interface{}) {
+	chatID := message.Chat.ID
+
+	// Получаем список месяцев
+	rawMonths := utils.GetLocalizedString(l, "months")
+	if rawMonths == "" {
+		utils.SendMessage(bot, chatID, "Ошибка: Месяцы не загружены.")
+		return
+	}
+
+	// Разделяем строку на массив
+	months := strings.Split(rawMonths, ", ")
+
+	// Создаем клавиатуру с месяцами
+	keyboard := keyboard.CreateMonthKeyboard(months)
+
+	// Отправляем сообщение с клавиатурой
+	msg := tgbotapi.NewMessage(chatID, "Выберите месяц:")
 	msg.ReplyMarkup = keyboard
 
 	if _, err := bot.Send(msg); err != nil {
