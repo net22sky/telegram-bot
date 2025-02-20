@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/net22sky/telegram-bot/db/models"
 )
 
 func setupTestDB() (*gorm.DB, func()) {
@@ -18,7 +20,7 @@ func setupTestDB() (*gorm.DB, func()) {
 	}
 
 	// Выполняем миграцию таблиц
-	err = db.AutoMigrate(&User{}, &Note{}, &PollAnswer{})
+	err = db.AutoMigrate(&models.User{}, &models.Note{}, &models.PollAnswer{})
 	if err != nil {
 		panic("Ошибка при миграции таблиц")
 	}

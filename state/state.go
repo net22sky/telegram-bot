@@ -5,34 +5,40 @@ import (
 	"sync"
 )
 
-var userStates = make(map[int64]string) // Хранилище состояний пользователей
-var userStatesMutex = &sync.Mutex{}     // Мьютекс для защиты userStates
+// UserState представляет состояние пользователя в приложении.
+type UserState string
 
 const (
-	StateIdle       = "idle"        // Режим ожидания
-	StateAddingNote = "adding_note" // Режим добавления заметки
+	StateIdle        UserState = "idle"        // Пользователь в режиме ожидания
+	StateAddingNote  UserState = "adding_note" // Пользователь добавляет заметку
+	StateEditingNote UserState = "editing_note"
 )
 
-// SetUserState устанавливает новое состояние пользователя.
+var (
+	userStates      = make(map[int64]UserState) // Хранилище состояний пользователей
+	userStatesMutex = &sync.Mutex{}             // Мьютекс для потокобезопасного доступа
+)
+
+// SetUserState устанавливает новое состояние для пользователя.
 // Параметры:
-//   - userID: ID пользователя.
-//   - newState: Новое состояние (например, "adding_note").
-func SetUserState(userID int64, newState string) {
+//   - userID: ID пользователя (Telegram ID)
+//   - newState: Новое состояние (см. константы UserState)
+func SetUserState(userID int64, newState UserState) {
 	userStatesMutex.Lock()
 	defer userStatesMutex.Unlock()
 
 	userStates[userID] = newState
-	log.Printf("Пользователь %d: Состояние установлено как %s", userID, newState)
+	log.Printf("[State] User %d: state set to '%s'", userID, newState)
 }
 
-// GetUserState получает текущее состояние пользователя.
+// GetUserState возвращает текущее состояние пользователя.
 // Параметры:
-//   - userID: ID пользователя.
+//   - userID: ID пользователя (Telegram ID)
 //
 // Возвращает:
-//   - string: Текущее состояние пользователя.
-//   - bool: true, если состояние существует; false, если нет.
-func GetUserState(userID int64) (string, bool) {
+//   - UserState: Текущее состояние
+//   - bool: Флаг наличия состояния (true если состояние существует)
+func GetUserState(userID int64) (UserState, bool) {
 	userStatesMutex.Lock()
 	defer userStatesMutex.Unlock()
 
@@ -42,11 +48,11 @@ func GetUserState(userID int64) (string, bool) {
 
 // DeleteUserState удаляет состояние пользователя.
 // Параметры:
-//   - userID: ID пользователя.
+//   - userID: ID пользователя (Telegram ID)
 func DeleteUserState(userID int64) {
 	userStatesMutex.Lock()
 	defer userStatesMutex.Unlock()
 
 	delete(userStates, userID)
-	log.Printf("Пользователь %d: Состояние очищено", userID)
+	log.Printf("[State] User %d: state cleared", userID)
 }

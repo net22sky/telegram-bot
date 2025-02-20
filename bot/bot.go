@@ -4,21 +4,55 @@ import (
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	
 	"github.com/net22sky/telegram-bot/handlers"
+	"gorm.io/gorm"
+	"github.com/net22sky/telegram-bot/repositories"
+	"github.com/net22sky/telegram-bot/services"
 )
 
+// Bot содержит зависимости бота.
+type Bot struct {
+    BotAPI      *tgbotapi.BotAPI
+    NoteService *services.NoteService
+    UserService *services.UserService
+	AnswerService *services.PollAnswerService
+	Debug       bool
+}
+
+
 // NewBot создает и возвращает новый экземпляр бота
-func NewBot(token string, debug bool) (*tgbotapi.BotAPI, error) {
-	bot, err := tgbotapi.NewBotAPI(token)
-	if err != nil {
-		return nil, err
-	}
-	bot.Debug = debug
-	return bot, nil
+func NewBot(token string, dbInstance *gorm.DB, debug bool) (*Bot, error) {
+	botAPI, err := tgbotapi.NewBotAPI(token)
+    if err != nil {
+        return nil, err
+    }
+    botAPI.Debug = debug // Устанавливаем режим отладки
+
+	log.Printf("Авторизован как %s", botAPI.Self.UserName)
+
+
+	 // Создание репозиториев
+	 noteRepo := repositories.NewNoteRepository(dbInstance)
+	 userRepo := repositories.NewUserRepository(dbInstance)
+	 answerRepo := repositories.NewPollAnswerRepository(dbInstance)
+ 
+	 // Создание сервисов
+	 noteService := services.NewNoteService(noteRepo, userRepo)
+	 userService := services.NewUserService(userRepo)
+	 answerService := services.NewPollAnswerService(answerRepo) 
+ 
+	 return &Bot{
+		 BotAPI:      botAPI,
+		 NoteService: noteService,
+		 UserService: userService,
+		 AnswerService: answerService,
+		 Debug:       debug,
+	 }, nil
 }
 
 // SetupMenu настраивает меню команд для бота.
-func SetupMenu(bot *tgbotapi.BotAPI) {
+func (b *Bot) SetupMenu() {
 	// Создаем список команд
 	commands := []tgbotapi.BotCommand{
 		{Command: "start", Description: "Запустить бота"},
@@ -32,7 +66,7 @@ func SetupMenu(bot *tgbotapi.BotAPI) {
 	setMyCommandsConfig := tgbotapi.NewSetMyCommands(commands...)
 
 	// Отправляем запрос
-	_, err := bot.Request(setMyCommandsConfig)
+	_, err := b.BotAPI.Request(setMyCommandsConfig)
 	if err != nil {
 		log.Panicf("Ошибка при установке меню команд: %v", err)
 	}
@@ -45,44 +79,45 @@ func SetupMenu(bot *tgbotapi.BotAPI) {
 //   - bot: Экземпляр Telegram-бота.
 //   - locales: Строки локализации.
 //   - lang: Язык пользователя.
-func StartPolling(bot *tgbotapi.BotAPI, locales map[string]map[string]interface{}, lang string) {
-	log.Printf("Авторизован как %s", bot.Self.UserName)
+func (b *Bot) StartPolling( locales map[string]map[string]interface{}, lang string) {
+
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates := bot.GetUpdatesChan(u)
+	updates := b.BotAPI.GetUpdatesChan(u)
 
-	SetupMenu(bot)
+	b.SetupMenu()
 
 	for update := range updates {
 		if update.CallbackQuery != nil {
-			handlers.HandleCallbackQuery(bot, update.CallbackQuery, locales, lang)
+			handlers.HandleCallbackQuery(b.BotAPI, update.CallbackQuery, locales, lang, b.NoteService)
 
 		}
 		if update.Message != nil {
 			//handlers.HandleMessage(bot, update.Message, locales, lang)
-			handlers.HandleMessage(bot, update, locales, lang)
+			handlers.HandleMessage(b.BotAPI, update, locales, lang, b.NoteService, b.UserService)
 		}
 		if update.PollAnswer != nil {
-			handlers.HandlePollAnswer(bot, update.PollAnswer)
+			handlers.HandlePollAnswer(b.BotAPI, update.PollAnswer, b.AnswerService)
 		}
 	}
 }
 
 // SendMessage отправляет сообщение
-func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
+func (b *Bot) SendMessage( chatID int64, text string, replyMarkup interface{}) {
 	msg := tgbotapi.NewMessage(chatID, text)
-	if _, err := bot.Send(msg); err != nil {
+	msg.ReplyMarkup = replyMarkup
+	if _, err := b.BotAPI.Send(msg); err != nil {
 		log.Printf("Ошибка при отправке сообщения: %v", err)
 	}
 }
 
 // SendPoll отправляет опрос
-func SendPoll(bot *tgbotapi.BotAPI, chatID int64) {
+func (b *Bot) SendPoll( chatID int64) {
 	poll := tgbotapi.NewPoll(chatID, "Какой ваш любимый язык программирования?", "Go", "Python", "JavaScript", "Java")
 	poll.IsAnonymous = false // Опрос не анонимный
-	if _, err := bot.Send(poll); err != nil {
+	if _, err := b.BotAPI.Send(poll); err != nil {
 		log.Printf("Ошибка при отправке опроса: %v", err)
 	}
 }

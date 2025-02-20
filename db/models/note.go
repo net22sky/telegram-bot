@@ -2,6 +2,7 @@ package models
 
 import "time"
 
+// Модель заметок
 type Note struct {
 	ID        uint      `gorm:"primaryKey"`
 	UserID    uint      `gorm:"not null"`
