@@ -3,7 +3,7 @@ package handlers
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	
+
 	"github.com/net22sky/telegram-bot/db/services"
 	"github.com/net22sky/telegram-bot/keyboard"
 	"github.com/net22sky/telegram-bot/state"
@@ -65,12 +65,12 @@ func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales
 // Параметры:
 // - bot: Экземпляр Telegram-бота.
 // - pollAnswer: Ответ пользователя на опрос.
-func HandlePollAnswer(bot *tgbotapi.BotAPI, pollAnswer *tgbotapi.PollAnswer, noteService *services.NoteService) {
+func HandlePollAnswer(bot *tgbotapi.BotAPI, pollAnswer *tgbotapi.PollAnswer, answerService *services.PollAnswerService) {
 	log.Printf("Пользователь %d ответил на опрос %s с вариантами %v",
 		pollAnswer.User.ID, pollAnswer.PollID, pollAnswer.OptionIDs)
 
 	// Сохранение ответа в базу данных
-	err := noteService.SavePollAnswer(uint(pollAnswer.User.ID), pollAnswer.PollID, pollAnswer.OptionIDs)
+	err := answerService.SavePollAnswer(uint(pollAnswer.User.ID), pollAnswer.PollID, pollAnswer.OptionIDs)
 	if err != nil {
 		log.Printf("Ошибка при сохранении ответа на опрос: %v", err)
 		return

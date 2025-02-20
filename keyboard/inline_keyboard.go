@@ -3,7 +3,7 @@ package keyboard
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/net22sky/telegram-bot/db"
+	"github.com/net22sky/telegram-bot/db/models"
 )
 
 // StartKeyboard создает Inline Keyboard для приветственного сообщения.
@@ -48,7 +48,7 @@ func RemindersKeyboard() tgbotapi.InlineKeyboardMarkup {
 }
 
 // DeleteNotesKeyboard создает Inline Keyboard для удаления заметок.
-func DeleteNotesKeyboard(notes []db.Note) tgbotapi.InlineKeyboardMarkup {
+func DeleteNotesKeyboard(notes []models.Note) tgbotapi.InlineKeyboardMarkup {
 	var rows [][]tgbotapi.InlineKeyboardButton
 
 	for _, note := range notes {

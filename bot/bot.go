@@ -4,51 +4,49 @@ import (
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	
+
+	"github.com/net22sky/telegram-bot/db/repositories"
+	"github.com/net22sky/telegram-bot/db/services"
 	"github.com/net22sky/telegram-bot/handlers"
 	"gorm.io/gorm"
-	"github.com/net22sky/telegram-bot/repositories"
-	"github.com/net22sky/telegram-bot/services"
 )
 
 // Bot содержит зависимости бота.
 type Bot struct {
-    BotAPI      *tgbotapi.BotAPI
-    NoteService *services.NoteService
-    UserService *services.UserService
+	BotAPI        *tgbotapi.BotAPI
+	NoteService   *services.NoteService
+	UserService   *services.UserService
 	AnswerService *services.PollAnswerService
-	Debug       bool
+	Debug         bool
 }
-
 
 // NewBot создает и возвращает новый экземпляр бота
 func NewBot(token string, dbInstance *gorm.DB, debug bool) (*Bot, error) {
 	botAPI, err := tgbotapi.NewBotAPI(token)
-    if err != nil {
-        return nil, err
-    }
-    botAPI.Debug = debug // Устанавливаем режим отладки
+	if err != nil {
+		return nil, err
+	}
+	botAPI.Debug = debug // Устанавливаем режим отладки
 
 	log.Printf("Авторизован как %s", botAPI.Self.UserName)
 
+	// Создание репозиториев
+	noteRepo := repositories.NewNoteRepository(dbInstance)
+	userRepo := repositories.NewUserRepository(dbInstance)
+	answerRepo := repositories.NewPollAnswerRepository(dbInstance)
 
-	 // Создание репозиториев
-	 noteRepo := repositories.NewNoteRepository(dbInstance)
-	 userRepo := repositories.NewUserRepository(dbInstance)
-	 answerRepo := repositories.NewPollAnswerRepository(dbInstance)
- 
-	 // Создание сервисов
-	 noteService := services.NewNoteService(noteRepo, userRepo)
-	 userService := services.NewUserService(userRepo)
-	 answerService := services.NewPollAnswerService(answerRepo) 
- 
-	 return &Bot{
-		 BotAPI:      botAPI,
-		 NoteService: noteService,
-		 UserService: userService,
-		 AnswerService: answerService,
-		 Debug:       debug,
-	 }, nil
+	// Создание сервисов
+	noteService := services.NewNoteService(noteRepo, userRepo)
+	userService := services.NewUserService(userRepo)
+	answerService := services.NewPollAnswerService(answerRepo)
+
+	return &Bot{
+		BotAPI:        botAPI,
+		NoteService:   noteService,
+		UserService:   userService,
+		AnswerService: answerService,
+		Debug:         debug,
+	}, nil
 }
 
 // SetupMenu настраивает меню команд для бота.
@@ -79,8 +77,7 @@ func (b *Bot) SetupMenu() {
 //   - bot: Экземпляр Telegram-бота.
 //   - locales: Строки локализации.
 //   - lang: Язык пользователя.
-func (b *Bot) StartPolling( locales map[string]map[string]interface{}, lang string) {
-
+func (b *Bot) StartPolling(locales map[string]map[string]interface{}, lang string) {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -91,7 +88,7 @@ func (b *Bot) StartPolling( locales map[string]map[string]interface{}, lang stri
 
 	for update := range updates {
 		if update.CallbackQuery != nil {
-			handlers.HandleCallbackQuery(b.BotAPI, update.CallbackQuery, locales, lang, b.NoteService)
+			handlers.HandleCallbackQuery(b.BotAPI, update.CallbackQuery, locales, lang, b.NoteService, b.UserService)
 
 		}
 		if update.Message != nil {
@@ -105,7 +102,7 @@ func (b *Bot) StartPolling( locales map[string]map[string]interface{}, lang stri
 }
 
 // SendMessage отправляет сообщение
-func (b *Bot) SendMessage( chatID int64, text string, replyMarkup interface{}) {
+func (b *Bot) SendMessage(chatID int64, text string, replyMarkup interface{}) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ReplyMarkup = replyMarkup
 	if _, err := b.BotAPI.Send(msg); err != nil {
@@ -114,7 +111,7 @@ func (b *Bot) SendMessage( chatID int64, text string, replyMarkup interface{}) {
 }
 
 // SendPoll отправляет опрос
-func (b *Bot) SendPoll( chatID int64) {
+func (b *Bot) SendPoll(chatID int64) {
 	poll := tgbotapi.NewPoll(chatID, "Какой ваш любимый язык программирования?", "Go", "Python", "JavaScript", "Java")
 	poll.IsAnonymous = false // Опрос не анонимный
 	if _, err := b.BotAPI.Send(poll); err != nil {

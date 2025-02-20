@@ -61,14 +61,14 @@ func (r *UserRepository) GetUserByID(telegramID int64) (*models.User, error) {
 
 // UpdateUser обновляет данные пользователя.
 func (r *UserRepository) UpdateUser(telegramID int64, updates map[string]interface{}) error {
-    var user models.User
-    result := r.db.Model(&user).Where("telegram_id = ?", telegramID).Updates(updates)
-    if result.Error != nil {
-        return fmt.Errorf("ошибка при обновлении пользователя: %w", result.Error)
-    }
-    if result.RowsAffected == 0 {
-        return fmt.Errorf("пользователь с Telegram ID %d не найден", telegramID)
-    }
-    log.Printf("Пользователь %d успешно обновлен: %+v", telegramID, updates)
-    return nil
+	var user models.User
+	result := r.db.Model(&user).Where("telegram_id = ?", telegramID).Updates(updates)
+	if result.Error != nil {
+		return fmt.Errorf("ошибка при обновлении пользователя: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("пользователь с Telegram ID %d не найден", telegramID)
+	}
+	log.Printf("Пользователь %d успешно обновлен: %+v", telegramID, updates)
+	return nil
 }

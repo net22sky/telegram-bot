@@ -7,7 +7,6 @@ import (
 
 	"github.com/net22sky/telegram-bot/db/models"
 	"github.com/net22sky/telegram-bot/db/repositories"
-
 )
 
 type UserService struct {
@@ -34,11 +33,10 @@ func (s *UserService) GetUserByID(telegramID int64) (*models.User, error) {
 	return s.userRepo.GetUserByID(telegramID)
 }
 
-
 // UpdateUser обновляет данные пользователя.
 func (s *UserService) UpdateUser(telegramID int64, updates map[string]interface{}) error {
-    if telegramID <= 0 {
-        return errors.New("некорректный Telegram ID")
-    }
-    return s.userRepo.UpdateUser(telegramID, updates)
+	if telegramID <= 0 {
+		return errors.New("некорректный Telegram ID")
+	}
+	return s.userRepo.UpdateUser(telegramID, updates)
 }

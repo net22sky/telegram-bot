@@ -4,7 +4,6 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"github.com/net22sky/telegram-bot/db"
 	"github.com/net22sky/telegram-bot/keyboard"
 	"github.com/net22sky/telegram-bot/state"
 	"github.com/net22sky/telegram-bot/utils"
@@ -16,7 +15,7 @@ import (
 )
 
 // HandleCallbackQuery обрабатывает нажатия на Inline Keyboard.
-func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, locales Locales, lang string, noteService *services.NoteService) {
+func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, locales Locales, lang string, noteService *services.NoteService, userService *services.UserService) {
 	chatID := callbackQuery.Message.Chat.ID
 	userID := callbackQuery.From.ID
 
@@ -42,7 +41,7 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		}
 
 		// Получаем пользователя по Telegram ID
-		user, err := db.GetUserByID(userID)
+		user, err := userService.GetUserByID(userID)
 		if err != nil {
 			log.Printf("ошибка при получении пользователя: %v", err)
 			return

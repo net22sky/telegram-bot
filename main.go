@@ -7,9 +7,9 @@ import (
 	"github.com/net22sky/telegram-bot/config"
 	"github.com/net22sky/telegram-bot/db" // Импортируем пакет db
 
+	"fmt"
 	"log"
 	"os"
-	"fmt"
 )
 
 func main() {
@@ -49,17 +49,17 @@ func main() {
 
 	// Инициализация базы данных
 	dbInstance, err := db.InitDB(mysqlDSN, true) // true для автоматических миграций
-    if err != nil {
-        log.Fatalf("Ошибка при инициализации базы данных: %v", err)
-    }
+	if err != nil {
+		log.Fatalf("Ошибка при инициализации базы данных: %v", err)
+	}
 
 	debug := true
 	// Создаем и настраиваем бота
-	botInstance, err := bot.NewBot(os.Getenv("TELEGRAM_BOT_TOKEN"),dbInstance, debug)
+	botInstance, err := bot.NewBot(os.Getenv("TELEGRAM_BOT_TOKEN"), dbInstance, debug)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	// Запускаем бота
-	botInstance.StartPolling( locales, lang)
+	botInstance.StartPolling(locales, lang)
 }
