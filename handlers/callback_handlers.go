@@ -14,7 +14,7 @@ import (
 )
 
 // HandleCallbackQuery обрабатывает нажатия на Inline Keyboard.
-func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, locales Locales, lang string, noteService *services.NoteService, userService *services.UserService) {
+func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery, locales Locales, lang string, noteService *services.NoteService, userService *services.UserService, stateManager  *state.StateManager ) {
 	chatID := callbackQuery.Message.Chat.ID
 	userID := callbackQuery.From.ID
 
@@ -75,7 +75,8 @@ func HandleCallbackQuery(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 			utils.RemindersKeyboard(bot, callbackQuery, l)
 		case "add_note":
 			// Переходим в режим добавления заметки
-			state.SetUserState(userID, state.StateAddingNote)
+			
+			stateManager.SetUserState(userID, state.StateAddingNote)
 			utils.SendMessage(bot, chatID, utils.GetLocalizedString(l, "enter_note_text"))
 
 		case "view_notes":

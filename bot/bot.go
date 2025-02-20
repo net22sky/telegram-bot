@@ -4,7 +4,7 @@ import (
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-
+	"github.com/net22sky/telegram-bot/state"
 	"github.com/net22sky/telegram-bot/db/repositories"
 	"github.com/net22sky/telegram-bot/db/services"
 	"github.com/net22sky/telegram-bot/handlers"
@@ -18,6 +18,7 @@ type Bot struct {
 	NoteService   *services.NoteService
 	UserService   *services.UserService
 	AnswerService *services.PollAnswerService
+	StateManager  *state.StateManager 
 	Debug         bool
 }
 
@@ -41,11 +42,15 @@ func NewBot(token string, dbInstance *gorm.DB, debug bool) (*Bot, error) {
 	userService := services.NewUserService(userRepo)
 	answerService := services.NewPollAnswerService(answerRepo)
 
+	// Инициализация менеджера состояний
+    stateManager := state.NewStateManager()
+
 	return &Bot{
 		BotAPI:        botAPI,
 		NoteService:   noteService,
 		UserService:   userService,
 		AnswerService: answerService,
+		StateManager:  stateManager,
 		Debug:         debug,
 	}, nil
 }
@@ -86,15 +91,15 @@ func (b *Bot) StartPolling(locales map[string]map[string]interface{}, lang strin
 	updates := b.BotAPI.GetUpdatesChan(u)
 
 	b.SetupMenu()
-
+	
 	for update := range updates {
 		if update.CallbackQuery != nil {
-			handlers.HandleCallbackQuery(b.BotAPI, update.CallbackQuery, locales, lang, b.NoteService, b.UserService)
+			handlers.HandleCallbackQuery(b.BotAPI, update.CallbackQuery, locales, lang, b.NoteService, b.UserService,b.StateManager)
 
 		}
 		if update.Message != nil {
 			//handlers.HandleMessage(bot, update.Message, locales, lang)
-			handlers.HandleMessage(b.BotAPI, update, locales, lang, b.NoteService, b.UserService)
+			handlers.HandleMessage(b.BotAPI, update, locales, lang, b.NoteService, b.UserService, b.StateManager )
 		}
 		if update.PollAnswer != nil {
 			utils.HandlePollAnswer(b.BotAPI, update.PollAnswer, b.AnswerService)

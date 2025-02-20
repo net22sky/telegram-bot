@@ -1,20 +1,26 @@
 package state
 
 import (
-	"sync"
+    "github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestConcurrentAccess(t *testing.T) {
-	var wg sync.WaitGroup
-	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-		go func(id int64) {
-			defer wg.Done()
-			SetUserState(id, StateAddingNote)
-			GetUserState(id)
-			DeleteUserState(id)
-		}(int64(i))
-	}
-	wg.Wait()
+func TestStateManager(t *testing.T) {
+    manager := NewStateManager()
+    userID := int64(123456789)
+
+    // Устанавливаем состояние
+    manager.SetUserState(userID, StateAddingNote)
+
+    // Проверяем состояние
+    state, exists := manager.GetUserState(userID)
+    assert.True(t, exists)
+    assert.Equal(t, StateAddingNote, state)
+
+    // Удаляем состояние
+    manager.DeleteUserState(userID)
+
+    // Проверяем, что состояние удалено
+    _, exists = manager.GetUserState(userID)
+    assert.False(t, exists)
 }

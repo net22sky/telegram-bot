@@ -18,19 +18,20 @@ type Locales map[string]map[string]interface{}
 // - update: Входящее обновление от Telegram.
 // - locales: Локализованные строки для разных языков.
 // - lang: Язык пользователя.
-func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales, lang string, noteService *services.NoteService, userService *services.UserService) {
+func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales, lang string, noteService *services.NoteService, userService *services.UserService,stateManager  *state.StateManager) {
 	l := locales[lang] // Выбираем строки для текущего языка
 
 	if update.Message != nil {
 		message := update.Message
 
+		
 		// Проверяем текущее состояние пользователя
-		states, exists := state.GetUserState(message.From.ID)
+		states, exists := stateManager.GetUserState(message.From.ID)
 
 		if exists && states == state.StateAddingNote {
 			// Если пользователь добавляет заметку, сохраняем её
 			utils.AddNote(bot, message, l, noteService, userService)
-			state.SetUserState(int64(message.From.ID), "") // Очищаем состояние
+			stateManager.DeleteUserState(int64(message.From.ID)) // Очищаем состояние
 			return
 		}
 
@@ -60,11 +61,12 @@ func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales
 }
 
 // handleUserState обрабатывает состояние пользователя (например, добавление заметки).
-func handleUserState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]interface{}, noteService *services.NoteService, userService *services.UserService) bool {
-	states, exists := state.GetUserState(message.From.ID)
+func handleUserState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]interface{}, noteService *services.NoteService, userService *services.UserService,stateManager  *state.StateManager) bool {
+
+	states, exists := stateManager.GetUserState(message.From.ID)
 	if exists && states == state.StateAddingNote {
 		utils.AddNote(bot, message, l, noteService, userService)
-		state.SetUserState(int64(message.From.ID), "")
+		stateManager.DeleteUserState(int64(message.From.ID))
 		return true
 	}
 	return false

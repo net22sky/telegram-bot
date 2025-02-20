@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-var DB *gorm.DB
+//var DB *gorm.DB
 
 // InitDB инициализирует подключение к базе данных и возвращает экземпляр *gorm.DB.
 func InitDB(dsn string, migrate bool) (*gorm.DB, error) {
