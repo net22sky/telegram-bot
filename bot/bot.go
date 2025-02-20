@@ -8,6 +8,7 @@ import (
 	"github.com/net22sky/telegram-bot/db/repositories"
 	"github.com/net22sky/telegram-bot/db/services"
 	"github.com/net22sky/telegram-bot/handlers"
+	"github.com/net22sky/telegram-bot/utils"
 	"gorm.io/gorm"
 )
 
@@ -96,7 +97,7 @@ func (b *Bot) StartPolling(locales map[string]map[string]interface{}, lang strin
 			handlers.HandleMessage(b.BotAPI, update, locales, lang, b.NoteService, b.UserService)
 		}
 		if update.PollAnswer != nil {
-			handlers.HandlePollAnswer(b.BotAPI, update.PollAnswer, b.AnswerService)
+			utils.HandlePollAnswer(b.BotAPI, update.PollAnswer, b.AnswerService)
 		}
 	}
 }
