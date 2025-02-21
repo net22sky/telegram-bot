@@ -25,9 +25,11 @@ func NotesKeyboard() tgbotapi.InlineKeyboardMarkup {
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Добавить заметку", "add_note"),
 			tgbotapi.NewInlineKeyboardButtonData("Удалить заметку", "deletes_note"),
+			tgbotapi.NewInlineKeyboardButtonData("Список заметок", "view_notes"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Список заметок", "view_notes"),
+
+			tgbotapi.NewInlineKeyboardButtonData("Главное меню", "main_menu"),
 			tgbotapi.NewInlineKeyboardButtonData("Помощь", "help"),
 		),
 	)
@@ -39,9 +41,11 @@ func RemindersKeyboard() tgbotapi.InlineKeyboardMarkup {
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Добавить напоминание", "add_reminder"),
 			tgbotapi.NewInlineKeyboardButtonData("Удалить напоминание", "delete_reminder"),
+			tgbotapi.NewInlineKeyboardButtonData("Главное меню", "main_menu"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Список напоминаний", "view_reminders"),
+
 			tgbotapi.NewInlineKeyboardButtonData("Помощь", "help"),
 		),
 	)
@@ -68,8 +72,8 @@ func DeleteNotesKeyboard(notes []models.Note) tgbotapi.InlineKeyboardMarkup {
 func LanguageKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🇷🇺 Русский", "set_language_ru"),
-			tgbotapi.NewInlineKeyboardButtonData("🇬🇧 English", "set_language_en"),
+			tgbotapi.NewInlineKeyboardButtonData("🇷🇺 Русский", "lang_ru"),
+			tgbotapi.NewInlineKeyboardButtonData("🇬🇧 English", "lang_en"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отмена", "cancel"),
@@ -83,6 +87,22 @@ func SettingsKeyboard() tgbotapi.InlineKeyboardMarkup {
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Выбрать язык", "choose_language"),
 			tgbotapi.NewInlineKeyboardButtonData("Настроить часовой пояс", "choose_timezone"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Отмена", "cancel"),
+		),
+	)
+}
+
+func RemindersCategoryKeyboard() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Подписка", "category_subscription"),
+			tgbotapi.NewInlineKeyboardButtonData("День рождения", "category_birthday"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Кредиты", "category_loans"),
+			tgbotapi.NewInlineKeyboardButtonData("ЖКХ", "category_utilities"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отмена", "cancel"),

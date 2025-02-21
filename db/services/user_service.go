@@ -40,3 +40,8 @@ func (s *UserService) UpdateUser(telegramID int64, updates map[string]interface{
 	}
 	return s.userRepo.UpdateUser(telegramID, updates)
 }
+
+// SetUserLanguage устанавливает язык пользователя.
+func (s *UserService) SetUserLanguage(telegramID int64, language string) error {
+	return s.userRepo.UpdateUserLanguage(telegramID, language)
+}

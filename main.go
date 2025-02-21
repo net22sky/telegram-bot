@@ -33,7 +33,7 @@ func main() {
 	}
 
 	// Установите язык по умолчанию (например, ru)
-	lang := "ru"
+	//lang := "ru"
 
 	// Получаем DSN MySQL из переменной окружения
 	mysqlDSN := os.Getenv("MYSQL_DSN")
@@ -61,5 +61,5 @@ func main() {
 	}
 
 	// Запускаем бота
-	botInstance.StartPolling(locales, lang)
+	botInstance.StartPolling(locales)
 }

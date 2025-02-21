@@ -98,3 +98,25 @@ func ShowDeleteNotesMenu(bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQ
 		log.Printf("Ошибка при отправке сообщения: %v", err)
 	}
 }
+
+func ViewSendSettingsKeyboard(bot *tgbotapi.BotAPI, chatID int64, l map[string]interface{}) {
+
+	keyboard := keyboard.LanguageKeyboard()
+
+	msg := tgbotapi.NewMessage(chatID, GetLocalizedString(l, "select_language"))
+	msg.ReplyMarkup = keyboard
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Ошибка при отправке сообщения: %v", err)
+	}
+}
+
+func AddReminderKeyboard(bot *tgbotapi.BotAPI, chatID int64, l map[string]interface{}) {
+	keyboard := keyboard.RemindersCategoryKeyboard()
+
+	msg := tgbotapi.NewMessage(chatID, GetLocalizedString(l, "select_reminders_category"))
+	msg.ReplyMarkup = keyboard
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Ошибка при отправке сообщения: %v", err)
+	}
+
+}

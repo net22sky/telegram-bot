@@ -4,10 +4,10 @@ import (
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/net22sky/telegram-bot/state"
 	"github.com/net22sky/telegram-bot/db/repositories"
 	"github.com/net22sky/telegram-bot/db/services"
 	"github.com/net22sky/telegram-bot/handlers"
+	"github.com/net22sky/telegram-bot/state"
 	"github.com/net22sky/telegram-bot/utils"
 	"gorm.io/gorm"
 )
@@ -18,7 +18,7 @@ type Bot struct {
 	NoteService   *services.NoteService
 	UserService   *services.UserService
 	AnswerService *services.PollAnswerService
-	StateManager  *state.StateManager 
+	StateManager  *state.StateManager
 	Debug         bool
 }
 
@@ -43,7 +43,7 @@ func NewBot(token string, dbInstance *gorm.DB, debug bool) (*Bot, error) {
 	answerService := services.NewPollAnswerService(answerRepo)
 
 	// Инициализация менеджера состояний
-    stateManager := state.NewStateManager()
+	stateManager := state.NewStateManager()
 
 	return &Bot{
 		BotAPI:        botAPI,
@@ -62,7 +62,6 @@ func (b *Bot) SetupMenu() {
 		{Command: "start", Description: "Запустить бота"},
 		{Command: "help", Description: "Получить помощь"},
 		{Command: "notes", Description: "Посмотреть список заметок"},
-
 		{Command: "settings", Description: "Настройки языка и времени"},
 	}
 
@@ -83,7 +82,7 @@ func (b *Bot) SetupMenu() {
 //   - bot: Экземпляр Telegram-бота.
 //   - locales: Строки локализации.
 //   - lang: Язык пользователя.
-func (b *Bot) StartPolling(locales map[string]map[string]interface{}, lang string) {
+func (b *Bot) StartPolling(locales map[string]map[string]interface{}) {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -91,15 +90,15 @@ func (b *Bot) StartPolling(locales map[string]map[string]interface{}, lang strin
 	updates := b.BotAPI.GetUpdatesChan(u)
 
 	b.SetupMenu()
-	
+
 	for update := range updates {
 		if update.CallbackQuery != nil {
-			handlers.HandleCallbackQuery(b.BotAPI, update.CallbackQuery, locales, lang, b.NoteService, b.UserService,b.StateManager)
+			handlers.HandleCallbackQuery(b.BotAPI, update.CallbackQuery, locales, b.NoteService, b.UserService, b.StateManager)
 
 		}
 		if update.Message != nil {
 			//handlers.HandleMessage(bot, update.Message, locales, lang)
-			handlers.HandleMessage(b.BotAPI, update, locales, lang, b.NoteService, b.UserService, b.StateManager )
+			handlers.HandleMessage(b.BotAPI, update, locales, b.NoteService, b.UserService, b.StateManager)
 		}
 		if update.PollAnswer != nil {
 			utils.HandlePollAnswer(b.BotAPI, update.PollAnswer, b.AnswerService)

@@ -4,9 +4,9 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/net22sky/telegram-bot/db/services"
-
 	"github.com/net22sky/telegram-bot/state"
 	"github.com/net22sky/telegram-bot/utils"
+
 	"strings"
 )
 
@@ -17,21 +17,24 @@ type Locales map[string]map[string]interface{}
 // - bot: Экземпляр Telegram-бота.
 // - update: Входящее обновление от Telegram.
 // - locales: Локализованные строки для разных языков.
-// - lang: Язык пользователя.
-func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales, lang string, noteService *services.NoteService, userService *services.UserService,stateManager  *state.StateManager) {
+// - noteService: Сервис для работы с заметками.
+// - userService: Сервис для работы с пользователями.
+// - stateManager: Менеджер состояний пользователя.
+func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales, noteService *services.NoteService, userService *services.UserService, stateManager *state.StateManager) {
+
+	//chatID := update.Message.Chat.ID
+	userID := update.Message.From.ID
+
+	lang := utils.GetUserLanguage(userID, userService)
+
 	l := locales[lang] // Выбираем строки для текущего языка
 
 	if update.Message != nil {
 		message := update.Message
 
-		
 		// Проверяем текущее состояние пользователя
-		states, exists := stateManager.GetUserState(message.From.ID)
-
-		if exists && states == state.StateAddingNote {
-			// Если пользователь добавляет заметку, сохраняем её
-			utils.AddNote(bot, message, l, noteService, userService)
-			stateManager.DeleteUserState(int64(message.From.ID)) // Очищаем состояние
+		// Обработка состояний пользователя (например, добавление заметки)
+		if utils.HandleUserState(bot, message, l, noteService, userService, stateManager) {
 			return
 		}
 
@@ -41,33 +44,12 @@ func HandleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, locales Locales
 			return
 		}
 
-		// Обработка других команд
-		switch message.Command() {
-		case "notes":
-			utils.ViewNotes(bot, message, l, noteService) // Показать список заметок пользователя
-		case "start":
-			utils.SendStartMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "welcome")) // Отправить приветственное сообщение
-		case "help":
-			utils.HandleHelp(bot, message, l) // Обработка команды /help
-		case "poll":
-			utils.SendPoll(bot, message.Chat.ID) // Создать опрос
-		case "dellnote":
-			utils.DeleteNote(bot, message, l, noteService) // Удалить заметку
-
-		default:
-			utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "unknown_command")) // Сообщение о неизвестной команде
+		// Обработка команд пользователя
+		if handleCommands(bot, message, l, noteService, userService) {
+			return
 		}
-	}
-}
+		// Если команда не распознана, отправляем сообщение о неизвестной команде
+		utils.SendMessage(bot, message.Chat.ID, utils.GetLocalizedString(l, "unknown_command"))
 
-// handleUserState обрабатывает состояние пользователя (например, добавление заметки).
-func handleUserState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, l map[string]interface{}, noteService *services.NoteService, userService *services.UserService,stateManager  *state.StateManager) bool {
-
-	states, exists := stateManager.GetUserState(message.From.ID)
-	if exists && states == state.StateAddingNote {
-		utils.AddNote(bot, message, l, noteService, userService)
-		stateManager.DeleteUserState(int64(message.From.ID))
-		return true
 	}
-	return false
 }

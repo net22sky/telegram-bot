@@ -72,3 +72,8 @@ func (r *UserRepository) UpdateUser(telegramID int64, updates map[string]interfa
 	log.Printf("Пользователь %d успешно обновлен: %+v", telegramID, updates)
 	return nil
 }
+
+// UpdateUserLanguage обновляет язык пользователя.
+func (r *UserRepository) UpdateUserLanguage(telegramID int64, language string) error {
+	return r.db.Model(&models.User{}).Where("telegram_id = ?", telegramID).Update("language", language).Error
+}
